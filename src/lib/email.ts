@@ -108,6 +108,8 @@ export async function sendEmail(message: {
     to: [{ email: message.to }],
     subject: message.subject,
     htmlContent: message.html,
+    // The sender address has no mailbox; replies go to the owner.
+    ...(env.ownerEmail ? { replyTo: { email: env.ownerEmail } } : {}),
   });
   if (!result.ok) {
     console.error(`[email] envío fallido: ${result.status} ${result.code ?? ""}`);
@@ -149,6 +151,7 @@ export async function sendCampaign(message: {
     htmlContent: message.html,
     previewText: message.previewText,
     recipients: { listIds: [env.brevoListId] },
+    ...(env.ownerEmail ? { replyTo: env.ownerEmail } : {}),
   });
   const id =
     created.ok && created.data && typeof created.data === "object" && "id" in created.data
