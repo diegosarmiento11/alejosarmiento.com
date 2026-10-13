@@ -52,8 +52,8 @@ export default function AboutPage() {
 
           <div className="prose mt-8">
             <p>
-              Soy arquitecto de software. Llevo 6 años construyendo software para empresas Fortune
-              500 y el último lo he dedicado por completo a la inteligencia artificial aplicada.
+              Soy arquitecto de software. Antes de fundar forabi.ai trabajé 4 años en Hatchworks AI,
+              construyendo para Cox Communications y FanDuel.
             </p>
             <p>
               Fundé{" "}

@@ -19,11 +19,10 @@ export const author = {
   tagline:
     "Construyo software con IA para empresas y escribo lo que aprendo en el camino.",
   shortBio:
-    "Arquitecto de software y fundador de forabi.ai. 6 años construyendo software para empresas Fortune 500, el último dedicado por completo a IA aplicada. Organizo Claude Colombia.",
+    "Fundador y CEO de forabi.ai, consultora de software a la medida e IA en Bogotá. Organizo Claude Colombia. Antes, 4 años en Hatchworks AI construyendo para Cox Communications y FanDuel.",
   // Only these facts may be stated about Alejandro across the site.
   facts: [
-    "6 años construyendo software para empresas Fortune 500",
-    "El último año dedicado por completo a IA aplicada",
+    "4 años en Hatchworks AI construyendo para Cox Communications y FanDuel",
     "Fundador y CEO de forabi.ai, consultora de software a la medida e IA con sede en Bogotá",
     "Organizador de Claude Colombia, comunidad educativa de IA en español",
     "Comunidad de 52K personas en @alejosarmiento.ai",
@@ -49,7 +48,7 @@ export const socials = {
   linkedin: {
     label: "LinkedIn",
     handle: "Alejandro Sarmiento",
-    url: "https://www.linkedin.com/company/forabi-ai",
+    url: "https://www.linkedin.com/in/diegoalejandrosarmiento/",
   },
   forabi: {
     label: "forabi.ai",
@@ -91,7 +90,8 @@ export const linkMap = {
   about: "https://forabi.ai/sobre",
 } as const;
 
-export const PERSON_ID = `${SITE_URL}/#alejandro-sarmiento`;
+// forabi.ai emits its founder with this same @id; keep the two in sync.
+export const PERSON_ID = `${SITE_URL}/#person`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
 export const FORABI_ORG_ID = "https://forabi.ai/#organization";
 
