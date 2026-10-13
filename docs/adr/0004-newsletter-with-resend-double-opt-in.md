@@ -1,6 +1,6 @@
 # 0004 — Newsletter propio con Resend y doble confirmación
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado por [0007](0007-newsletter-with-brevo.md)
 - **Fecha:** 2026-10-10
 - **Decide:** Alejandro Sarmiento
 

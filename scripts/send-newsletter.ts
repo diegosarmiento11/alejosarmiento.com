@@ -1,8 +1,7 @@
-// Sends one post to the newsletter segment as a Resend Broadcast.
+// Sends one post to the newsletter list as a Brevo campaign.
 // Usage: pnpm run newsletter:send <slug> [--yes]
 import { createInterface } from "node:readline/promises";
-import { Resend } from "resend";
-import { newPostEmail } from "../src/lib/email";
+import { newPostEmail, sendCampaign } from "../src/lib/email";
 import { env } from "../src/lib/env";
 import { loadPosts } from "../src/lib/posts";
 import { absoluteUrl, postPath } from "../src/lib/site";
@@ -13,8 +12,8 @@ async function main() {
   const skipConfirm = args.includes("--yes");
 
   if (!slug) throw new Error("Uso: pnpm run newsletter:send <slug> [--yes]");
-  if (!env.resendApiKey || !env.emailFrom || !env.resendSegmentId) {
-    throw new Error("Faltan RESEND_API_KEY, EMAIL_FROM o RESEND_SEGMENT_ID en el entorno.");
+  if (!env.brevoApiKey || !env.emailFrom || !env.brevoListId) {
+    throw new Error("Faltan BREVO_API_KEY, EMAIL_FROM o BREVO_LIST_ID en el entorno.");
   }
   const post = loadPosts({ includeDrafts: true }).find((item) => item.slug === slug);
   if (!post) throw new Error(`No existe content/blog/${slug}.mdx`);
@@ -36,19 +35,13 @@ async function main() {
     }
   }
 
-  const resend = new Resend(env.resendApiKey);
-  const created = await resend.broadcasts.create({
+  const email = newPostEmail({ title: post.title, description: post.description, url });
+  const id = await sendCampaign({
     name: `Post: ${post.slug}`,
-    segmentId: env.resendSegmentId,
-    from: env.emailFrom,
     previewText: post.description,
-    ...newPostEmail({ title: post.title, description: post.description, url }),
+    ...email,
   });
-  if (created.error) throw new Error(`No se pudo crear el envío: ${created.error.message}`);
-
-  const sent = await resend.broadcasts.send(created.data.id);
-  if (sent.error) throw new Error(`No se pudo enviar: ${sent.error.message}`);
-  console.log(`Enviado. Broadcast ${created.data.id}`);
+  console.log(`Enviado. Campaña ${id}`);
 }
 
 main().catch((error) => {

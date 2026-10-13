@@ -20,7 +20,7 @@ ninguno se publica hasta que Alejandro lo aprueba desde un enlace que le llega p
 - Defensa contra spam: campo trampa oculto, límite de peticiones por IP y moderación previa.
 - Cada comentario nuevo llega al correo de Alejandro con su texto y un enlace firmado a `/moderar`,
   donde lo aprueba o lo elimina.
-- Si falta Redis, Resend o `SIGNING_SECRET`, en producción los comentarios quedan cerrados (el
+- Si falta Redis, Brevo o `SIGNING_SECRET`, en producción los comentarios quedan cerrados (el
   formulario no se muestra). En desarrollo se aprueban solos para poder ver la interfaz.
 
 ## Consecuencias

@@ -1,4 +1,3 @@
-import { Resend } from "resend";
 import { env, hasEmail } from "./env";
 import { author, site, SITE_URL } from "./site";
 
@@ -43,7 +42,7 @@ export function newPostEmail(post: { title: string; description: string; url: st
 <h1 style="font-size:28px;line-height:1.2;margin:0 0 16px">${escapeHtml(post.title)}</h1>
 <p style="font-size:17px;line-height:1.6;margin:0">${escapeHtml(post.description)}</p>
 ${button(post.url, "Leer el post")}
-<p style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#78716c;margin:0"><a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#78716c">Darme de baja</a></p>`,
+<p style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#78716c;margin:0"><a href="{{ unsubscribe }}" style="color:#78716c">Darme de baja</a></p>`,
     ),
   };
 }
@@ -65,8 +64,37 @@ ${button(input.moderateUrl, "Aprobar o eliminar")}`,
   };
 }
 
-function client(): Resend {
-  return new Resend(env.resendApiKey);
+// "Alejandro Sarmiento <hola@alejosarmiento.com>" or a bare address.
+export function parseSender(from: string): { name?: string; email: string } | null {
+  const value = from.trim();
+  const named = /^"?([^"<]*?)"?\s*<([^<>\s]+@[^<>\s]+)>$/.exec(value);
+  if (named) {
+    const name = named[1].trim();
+    return name ? { name, email: named[2] } : { email: named[2] };
+  }
+  return /^[^<>\s]+@[^<>\s]+$/.test(value) ? { email: value } : null;
+}
+
+type BrevoResult = { ok: true; data: unknown } | { ok: false; status: number; code?: string };
+
+async function brevo(path: string, body?: unknown): Promise<BrevoResult> {
+  const response = await fetch(`https://api.brevo.com/v3${path}`, {
+    method: "POST",
+    headers: {
+      "api-key": env.brevoApiKey!,
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  }).catch(() => null);
+  if (!response) return { ok: false, status: 0 };
+  const data: unknown = await response.json().catch(() => null);
+  if (response.ok) return { ok: true, data };
+  const code =
+    data && typeof data === "object" && "code" in data && typeof data.code === "string"
+      ? data.code
+      : undefined;
+  return { ok: false, status: response.status, code };
 }
 
 export async function sendEmail(message: {
@@ -75,30 +103,62 @@ export async function sendEmail(message: {
   html: string;
 }): Promise<boolean> {
   if (!hasEmail) return false;
-  const { error } = await client().emails.send({
-    from: env.emailFrom!,
-    to: message.to,
+  const result = await brevo("/smtp/email", {
+    sender: parseSender(env.emailFrom!),
+    to: [{ email: message.to }],
     subject: message.subject,
-    html: message.html,
+    htmlContent: message.html,
   });
-  if (error) {
-    console.error(`[email] envío fallido: ${error.name}`);
+  if (!result.ok) {
+    console.error(`[email] envío fallido: ${result.status} ${result.code ?? ""}`);
     return false;
   }
   return true;
 }
 
 // Idempotent from the reader's point of view: confirming twice is not an error.
+// `updateEnabled` also brings back someone who is already a contact.
 export async function addSubscriber(email: string): Promise<boolean> {
   if (!hasEmail) return false;
-  const { error } = await client().contacts.create({
+  const result = await brevo("/contacts", {
     email,
-    unsubscribed: false,
-    ...(env.resendSegmentId ? { segments: [{ id: env.resendSegmentId }] } : {}),
+    updateEnabled: true,
+    ...(env.brevoListId ? { listIds: [env.brevoListId] } : {}),
   });
-  if (error && !/already exists/i.test(error.message)) {
-    console.error(`[email] no se pudo crear el contacto: ${error.name}`);
+  if (!result.ok) {
+    console.error(`[email] no se pudo crear el contacto: ${result.status} ${result.code ?? ""}`);
     return false;
   }
   return true;
+}
+
+// Creates a campaign for the newsletter list and sends it right away.
+export async function sendCampaign(message: {
+  name: string;
+  subject: string;
+  html: string;
+  previewText: string;
+}): Promise<number> {
+  if (!hasEmail || !env.brevoListId) {
+    throw new Error("Faltan BREVO_API_KEY, EMAIL_FROM o BREVO_LIST_ID en el entorno.");
+  }
+  const created = await brevo("/emailCampaigns", {
+    name: message.name,
+    subject: message.subject,
+    sender: parseSender(env.emailFrom!),
+    htmlContent: message.html,
+    previewText: message.previewText,
+    recipients: { listIds: [env.brevoListId] },
+  });
+  const id =
+    created.ok && created.data && typeof created.data === "object" && "id" in created.data
+      ? Number(created.data.id)
+      : NaN;
+  if (!created.ok || !Number.isInteger(id)) {
+    const detail = created.ok ? "respuesta sin id" : `${created.status} ${created.code ?? ""}`;
+    throw new Error(`No se pudo crear la campaña: ${detail}`);
+  }
+  const sent = await brevo(`/emailCampaigns/${id}/sendNow`);
+  if (!sent.ok) throw new Error(`No se pudo enviar la campaña ${id}: ${sent.status} ${sent.code ?? ""}`);
+  return id;
 }

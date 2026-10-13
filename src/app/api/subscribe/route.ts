@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
   if (!newsletterReady) {
     const local = confirmUrl.replace(absoluteUrl("/"), `${request.nextUrl.origin}/`);
-    console.info(`[newsletter] sin Resend configurado; enlace de confirmación: ${local}`);
+    console.info(`[newsletter] sin Brevo configurado; enlace de confirmación: ${local}`);
     return NextResponse.json({ status: "sent" });
   }
 

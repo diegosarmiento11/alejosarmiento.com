@@ -29,7 +29,7 @@ Lo que tiene que lograr:
 | Visitas | Total del sitio (una por sesión) y lecturas por post, públicas (ADR 0003) |
 | Reacciones | Me gusta · Me encanta · No me gustó; una por navegador, sin login, públicas (ADR 0003) |
 | Comentarios | Propios, nombre y texto, moderados por correo antes de publicarse (ADR 0005) |
-| Newsletter | Formulario propio con doble confirmación; envíos con Resend, comando manual (ADR 0004) |
+| Newsletter | Formulario propio con doble confirmación; envíos con Brevo, comando manual (ADR 0007) |
 | Compartir | Historias de Instagram (imagen 1080×1920 + enlace copiado), LinkedIn y copiar enlace |
 | SEO | Checklist de `CLAUDE.md` §4, aplicado por `seo:check`; JSON-LD, sitemap, RSS y `llms.txt` generados |
 | Forma de trabajo | ADR + docs + `CLAUDE.md`, sin tablero ni trunk-based (ADR 0006) |
@@ -63,7 +63,7 @@ se abre la hoja de compartir del sistema con la imagen lista y el enlace copiado
 escritorio se muestra la imagen para descargar.
 
 **Newsletter.** Correo → enlace firmado que vence en 7 días → botón de confirmar → contacto en
-Resend. Al publicar, `pnpm run newsletter:send <slug>` envía el aviso.
+Brevo. Al publicar, `pnpm run newsletter:send <slug>` envía el aviso.
 
 **Comentarios.** Quedan pendientes; a Alejandro le llega el texto con un enlace para aprobar o
 eliminar.
@@ -85,8 +85,8 @@ eliminar.
 
 1. Crear el proyecto en Vercel desde el repo y conectar `alejosarmiento.com` (DNS en Hostinger).
 2. Agregar Upstash Redis desde el Marketplace de Vercel (define las variables solo).
-3. En Resend: verificar el dominio, crear un segmento y una API key.
-4. Definir en Vercel `RESEND_API_KEY`, `RESEND_SEGMENT_ID`, `EMAIL_FROM`, `OWNER_EMAIL` y
+3. En Brevo: autenticar el dominio, crear una lista y una API key.
+4. Definir en Vercel `BREVO_API_KEY`, `BREVO_LIST_ID`, `EMAIL_FROM`, `OWNER_EMAIL` y
    `SIGNING_SECRET` (ver `.env.example`).
 5. Reescribir el post de bienvenida con la voz de Alejandro y revisar los datos de `src/lib/site.ts`.
 6. Registrar el sitio en Google Search Console y enviar el sitemap.

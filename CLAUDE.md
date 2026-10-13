@@ -31,8 +31,8 @@ leen de ahí; ningún componente ni post los escribe a mano.
 ## 2. Stack y comandos
 
 Next.js 16 (App Router, Cache Components), React 19, TypeScript estricto, Tailwind 4, shadcn/ui
-(sobre Base UI), MDX en el repo, Upstash Redis para contadores, Resend para correo, Vercel. Las
-razones están en los ADR 0001 a 0005.
+(sobre Base UI), MDX en el repo, Upstash Redis para contadores, Brevo para correo, Vercel. Las
+razones están en los ADR 0001 a 0007.
 
 ```bash
 pnpm install
@@ -61,7 +61,7 @@ scripts/                  seo-check y envío del newsletter
 - **Las páginas de contenido son estáticas.** Visitas, reacciones y comentarios se cargan en el
   navegador contra `src/app/api/`. Un post nunca espera a Redis para pintarse (ADR 0003).
 - **`process.env` solo en `src/lib/env.ts`.** Toda variable nueva va ahí y a `.env.example`.
-- **El sitio arranca y compila sin credenciales.** Sin Redis se usa memoria; sin Resend, el newsletter
+- **El sitio arranca y compila sin credenciales.** Sin Redis se usa memoria; sin Brevo, el newsletter
   y los comentarios responden que no están disponibles en producción y se simulan en desarrollo.
 - **Componentes de shadcn antes que propios.** Si existe en shadcn, se agrega con
   `pnpm dlx shadcn@latest add <componente>`.
