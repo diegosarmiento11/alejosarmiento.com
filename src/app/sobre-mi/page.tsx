@@ -6,9 +6,9 @@ import { profilePageSchema, serializeJsonLd } from "@/lib/jsonld";
 import { getAllPosts } from "@/lib/posts";
 import { author, CLAUDE_COLOMBIA_URL, pillars, postPath, socials } from "@/lib/site";
 
-const title = "Sobre Alejandro Sarmiento";
+const title = "Alejandro Sarmiento · Fundador de forabi.ai y Claude Colombia";
 const description =
-  "Quién es Alejandro Sarmiento: arquitecto de software, fundador y CEO de forabi.ai y organizador de Claude Colombia. Trayectoria, temas y contacto.";
+  "Quién es Alejandro Sarmiento: fundador y CEO de forabi.ai, organizador de Claude Colombia y arquitecto de software. Trayectoria, temas y contacto.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -84,6 +84,9 @@ export default function AboutPage() {
                 </li>
               ))}
             </ul>
+
+            <h2>¿Cuál Alejandro Sarmiento?</h2>
+            <p>{author.disambiguation}</p>
 
             <h2>Colaboraciones</h2>
             <p>

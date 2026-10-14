@@ -20,6 +20,8 @@ export function personSchema() {
     "@type": "Person",
     "@id": PERSON_ID,
     name: author.name,
+    alternateName: author.fullName,
+    disambiguatingDescription: `Alejandro Sarmiento, ${author.identityLine}`,
     url: absoluteUrl("/sobre-mi"),
     image: absoluteUrl(author.photo),
     jobTitle: author.jobTitle,

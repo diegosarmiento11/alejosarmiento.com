@@ -21,6 +21,8 @@ export function GET() {
 
 ${author.name}: ${author.facts.join(". ")}.
 
+${author.disambiguation}
+
 - [Sobre Alejandro Sarmiento](${absoluteUrl("/sobre-mi")})
 - [forabi.ai](${socials.forabi.url})
 - [Instagram](${socials.instagram.url})
