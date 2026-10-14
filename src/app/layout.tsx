@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
 import { serializeJsonLd, siteGraph } from "@/lib/jsonld";
+import { openGraphDefaults } from "@/lib/metadata";
 import { author, site, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -18,6 +19,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: site.title, template: `%s · ${site.name}` },
   description: site.description,
+  applicationName: site.name,
+  appleWebApp: { title: site.name },
   authors: [{ name: author.name, url: `${SITE_URL}/sobre-mi` }],
   creator: author.name,
   publisher: author.name,
@@ -27,8 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: site.name,
-    locale: site.locale,
+    ...openGraphDefaults,
     url: SITE_URL,
     title: site.title,
     description: site.description,

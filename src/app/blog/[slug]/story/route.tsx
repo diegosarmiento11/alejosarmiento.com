@@ -1,5 +1,6 @@
-import { renderPostImage } from "@/lib/og";
+import { renderStoryImage } from "@/lib/og";
 import { getAllPosts, getPost } from "@/lib/posts";
+import { pillars } from "@/lib/site";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -10,5 +11,5 @@ export async function GET(_request: Request, { params }: RouteContext<"/blog/[sl
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return new Response("Not found", { status: 404 });
-  return renderPostImage(post, "story");
+  return renderStoryImage({ label: pillars[post.pilar].name, title: post.title });
 }

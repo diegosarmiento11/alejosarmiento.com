@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
 import { profilePageSchema, serializeJsonLd } from "@/lib/jsonld";
+import { openGraphDefaults } from "@/lib/metadata";
 import { getAllPosts } from "@/lib/posts";
 import { author, CLAUDE_COLOMBIA_URL, pillars, postPath, socials } from "@/lib/site";
 
@@ -14,7 +15,15 @@ export const metadata: Metadata = {
   title: { absolute: title },
   description,
   alternates: { canonical: "/sobre-mi" },
-  openGraph: { type: "profile", title, description, url: "/sobre-mi" },
+  openGraph: {
+    ...openGraphDefaults,
+    type: "profile",
+    title,
+    description,
+    url: "/sobre-mi",
+    firstName: "Alejandro",
+    lastName: "Sarmiento",
+  },
 };
 
 const linkClass =

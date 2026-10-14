@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostList } from "@/components/post-card";
+import { openGraphDefaults } from "@/lib/metadata";
 import { getPostsByPillar } from "@/lib/posts";
-import { pillars, pillarSlugs, type PillarSlug } from "@/lib/site";
+import { pillars, pillarSlugs, site, type PillarSlug } from "@/lib/site";
 
 export function generateStaticParams() {
   return pillarSlugs.map((pilar) => ({ pilar }));
@@ -23,7 +24,13 @@ export async function generateMetadata({
     title: pillar.name,
     description: pillar.description,
     alternates: { canonical: `/pilares/${pilar}` },
-    openGraph: { title: pillar.name, description: pillar.description, url: `/pilares/${pilar}` },
+    openGraph: {
+      ...openGraphDefaults,
+      type: "website",
+      title: `${pillar.name} · ${site.name}`,
+      description: pillar.description,
+      url: `/pilares/${pilar}`,
+    },
   };
 }
 

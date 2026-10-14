@@ -50,6 +50,7 @@ export function websiteSchema() {
     "@id": WEBSITE_ID,
     url: SITE_URL,
     name: site.name,
+    alternateName: new URL(SITE_URL).host,
     description: site.description,
     inLanguage: "es",
     publisher: { "@id": PERSON_ID },

@@ -11,8 +11,9 @@ import { PostViews } from "@/components/post-views";
 import { Reactions } from "@/components/reactions";
 import { ShareButtons } from "@/components/share-buttons";
 import { postGraph, serializeJsonLd } from "@/lib/jsonld";
+import { openGraphDefaults } from "@/lib/metadata";
 import { formatDate, getAllPosts, getPost, getRelatedPosts } from "@/lib/posts";
-import { absoluteUrl, author, pillars, postPath, site } from "@/lib/site";
+import { absoluteUrl, author, pillars, postPath } from "@/lib/site";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -32,8 +33,7 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
     openGraph: {
       type: "article",
       url: path,
-      siteName: site.name,
-      locale: site.locale,
+      ...openGraphDefaults,
       title: post.title,
       description: post.description,
       publishedTime: post.datePublished,

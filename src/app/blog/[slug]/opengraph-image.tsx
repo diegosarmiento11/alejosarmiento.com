@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
-import { renderPostImage } from "@/lib/og";
+import { OG_IMAGE_ALT } from "@/lib/metadata";
+import { OG_SIZE, renderOgImage } from "@/lib/og";
 import { getAllPosts, getPost } from "@/lib/posts";
+import { pillars } from "@/lib/site";
 
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
-export const alt = "Post de Alejandro Sarmiento";
+export const alt = OG_IMAGE_ALT;
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -14,5 +16,5 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) notFound();
-  return renderPostImage(post, "og");
+  return renderOgImage({ label: pillars[post.pilar].name, title: post.title });
 }
