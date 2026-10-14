@@ -19,8 +19,8 @@ leen de ahí; ningún componente ni post los escribe a mano.
 - **Nombre:** siempre "Alejandro Sarmiento", completo, en title, byline, JSON-LD e imágenes OG. Nunca
   "Alejo" ni "A. Sarmiento" en esos lugares.
 - **Frase fija:** "Alejandro Sarmiento, fundador de forabi.ai y organizador de Claude Colombia". Hay
-  homónimos, uno de ellos en growth marketing en Bogotá; el nombre va acompañado de esa frase en
-  títulos, descripciones y perfiles. Nunca se nombra a la otra persona ni a su empresa.
+  homónimos; el nombre va acompañado de esa frase en títulos, descripciones y perfiles. El sitio se
+  diferencia diciendo quién es Alejandro, nunca aludiendo a otras personas.
 - **Quién es, en una línea:** arquitecto de software, fundador y CEO de forabi.ai, organizador de
   Claude Colombia.
 - **Hechos que se pueden afirmar:** los de `site.ts` (`author.facts`). Una cifra o credencial que no

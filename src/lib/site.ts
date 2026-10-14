@@ -18,10 +18,6 @@ export const author = {
   fullName: "Diego Alejandro Sarmiento",
   // The fixed line that travels with the name on every profile.
   identityLine: "fundador de forabi.ai y organizador de Claude Colombia",
-  // There are other people called Alejandro Sarmiento, one of them a growth
-  // marketer also based in Bogotá. Stated without naming anyone else.
-  disambiguation:
-    "Hay otras personas llamadas Alejandro Sarmiento, entre ellas un profesional de growth marketing en Bogotá. No somos la misma persona. Este es el sitio de Diego Alejandro Sarmiento, fundador de forabi.ai y organizador de Claude Colombia, @alejosarmiento.ai en Instagram.",
   role: "Arquitecto de software · Fundador y CEO de forabi.ai",
   jobTitle: "Fundador y CEO",
   tagline:

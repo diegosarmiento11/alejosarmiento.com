@@ -85,9 +85,6 @@ export default function AboutPage() {
               ))}
             </ul>
 
-            <h2>¿Cuál Alejandro Sarmiento?</h2>
-            <p>{author.disambiguation}</p>
-
             <h2>Colaboraciones</h2>
             <p>
               Para charlas, alianzas, entrevistas o proyectos, escríbeme a{" "}
