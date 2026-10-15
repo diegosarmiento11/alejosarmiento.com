@@ -9,7 +9,7 @@ function mdx(overrides: Record<string, string> = {}, body?: string): string {
       '"Empieza por el proceso repetitivo, con reglas claras y volumen alto. Un método simple para elegir."',
     datePublished: "2026-10-09",
     dateModified: "2026-10-09",
-    pilar: "ia-aplicada",
+    pilar: "construir-con-ia",
     keywords: "[uno, dos, tres]",
     faq: `
   - question: "¿Primera pregunta de ejemplo?"

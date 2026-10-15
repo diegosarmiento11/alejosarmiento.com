@@ -13,7 +13,7 @@ export function SiteFooter() {
             Recibe cada post nuevo en tu correo
           </h2>
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            IA aplicada y software para empresas, sin humo. Un correo cuando publico, nada más.
+            Diario de fundador, entrenamiento y software con IA, sin humo. Un correo cuando publico, nada más.
           </p>
           <SubscribeForm className="mx-auto mt-6 max-w-md text-left" />
         </div>

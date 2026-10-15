@@ -27,7 +27,7 @@ export function confirmationEmail(confirmUrl: string) {
     subject: "Confirma tu suscripción al blog de Alejandro Sarmiento",
     html: layout(
       `<h1 style="font-size:26px;line-height:1.25;margin:0 0 16px">Un clic y quedas dentro</h1>
-<p style="font-size:17px;line-height:1.6;margin:0">Confirma tu correo para recibir cada post nuevo sobre IA aplicada y software para empresas. Sin spam, y te puedes dar de baja cuando quieras.</p>
+<p style="font-size:17px;line-height:1.6;margin:0">Confirma tu correo para recibir cada post nuevo: mi diario de fundador, el entrenamiento y cómo construyo con IA. Sin spam, y te puedes dar de baja cuando quieras.</p>
 ${button(confirmUrl, "Confirmar suscripción")}
 <p style="font-size:14px;line-height:1.6;color:#78716c;margin:0">Si no fuiste tú, ignora este correo y no pasa nada.</p>`,
     ),

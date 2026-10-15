@@ -40,7 +40,7 @@ Lo que tiene que lograr:
 |---|---|
 | `/` | Feed: autor, suscripción, último post, lista, temas |
 | `/blog/<slug>` | Post: byline con foto, compartir, contenido, FAQ, reacciones, autor, comentarios, relacionados |
-| `/pilares/<pilar>` | Posts de un tema (`diario-de-fundador`, `30-antes-de-los-30`, `kilometros`, `ia-aplicada`, `construir-con-ia`) |
+| `/pilares/<pilar>` | Posts de un tema (`diario-de-fundador`, `30-antes-de-los-30`, `kilometros`, `construir-con-ia`) |
 | `/sobre-mi` | Página de entidad: foto grande, trayectoria, temas, contacto (`ProfilePage`) |
 | `/blog/<slug>/opengraph-image` · `/story` | Imagen para redes (1200×630) y para historias (1080×1920) |
 | `/sitemap.xml` · `/rss.xml` · `/llms.txt` · `/robots.txt` | Para buscadores, lectores RSS y LLM |

@@ -5,9 +5,9 @@ export const SITE_URL = "https://alejosarmiento.com";
 
 export const site = {
   name: "Alejandro Sarmiento",
-  title: "Alejandro Sarmiento · Fundador de forabi.ai · IA aplicada",
+  title: "Alejandro Sarmiento, diario de un fundador · forabi.ai",
   description:
-    "Blog de Alejandro Sarmiento, fundador de forabi.ai y organizador de Claude Colombia: lo que vivo al fundar una empresa, entrenar y aplicar IA.",
+    "Blog de Alejandro Sarmiento, fundador de forabi.ai y organizador de Claude Colombia: lo que vivo al fundar una empresa, entrenar y construir con IA.",
   locale: "es_CO",
   lang: "es",
 } as const;
@@ -65,7 +65,7 @@ export const socials = {
 
 export const CLAUDE_COLOMBIA_URL = "https://instagram.com/claude.colomb.ia";
 
-// Personal series first, then the business ones. The order is the one readers see.
+// Personal series first, then the business one. The order is the one readers see.
 export const pillars = {
   "diario-de-fundador": {
     name: "Diario de fundador",
@@ -82,21 +82,17 @@ export const pillars = {
     description:
       "Lo que el entrenamiento me enseña sobre construir una empresa, kilómetro a kilómetro.",
   },
-  "ia-aplicada": {
-    name: "IA aplicada",
-    description:
-      "Cómo usar inteligencia artificial y agentes en la operación real de una empresa: qué automatizar, cuánto cuesta y qué resultados esperar.",
-  },
   "construir-con-ia": {
     name: "Construir con IA",
     description:
-      "Cómo construyo software con Claude y otras herramientas de IA, explicado en español: arquitectura, decisiones y lo que aprendo haciéndolo.",
+      "Cómo construyo software y automatizo empresas con Claude, agentes y otras herramientas de IA, explicado en español: qué funciona y cuánto cuesta.",
   },
 } as const;
 
 // Pillars that were retired, and where their pages now point.
 export const retiredPillars = {
-  "agentes-de-ia": "ia-aplicada",
+  "ia-aplicada": "construir-con-ia",
+  "agentes-de-ia": "construir-con-ia",
   "construir-software": "construir-con-ia",
 } as const satisfies Record<string, PillarSlug>;
 
