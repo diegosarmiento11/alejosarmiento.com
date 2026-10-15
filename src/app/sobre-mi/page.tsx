@@ -7,7 +7,7 @@ import { openGraphDefaults } from "@/lib/metadata";
 import { getAllPosts } from "@/lib/posts";
 import { author, CLAUDE_COLOMBIA_URL, pillars, postPath, socials } from "@/lib/site";
 
-const title = "Alejandro Sarmiento · Fundador de forabi.ai y Claude Colombia";
+const title = "Quién es Alejandro Sarmiento, fundador de forabi.ai";
 const description =
   "Quién es Alejandro Sarmiento: fundador y CEO de forabi.ai, organizador de Claude Colombia y arquitecto de software. Trayectoria, temas y contacto.";
 
