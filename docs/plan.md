@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Alejandro publica sobre IA aplicada y software para empresas en Instagram (@alejosarmiento.ai) y
+Alejandro publica sobre IA aplicada, software para empresas y su vida como fundador en Instagram (@alejosarmiento.ai) y
 LinkedIn. Las redes sirven para descubrir un tema, no para explicarlo ni para que Google o un LLM lo
 encuentren meses después. El blog es el lugar de las respuestas largas, en un dominio propio.
 
@@ -40,7 +40,7 @@ Lo que tiene que lograr:
 |---|---|
 | `/` | Feed: autor, suscripción, último post, lista, temas |
 | `/blog/<slug>` | Post: byline con foto, compartir, contenido, FAQ, reacciones, autor, comentarios, relacionados |
-| `/pilares/<pilar>` | Posts de un tema (`ia-aplicada`, `agentes-de-ia`, `construir-software`) |
+| `/pilares/<pilar>` | Posts de un tema (`diario-de-fundador`, `30-antes-de-los-30`, `kilometros`, `ia-aplicada`, `construir-con-ia`) |
 | `/sobre-mi` | Página de entidad: foto grande, trayectoria, temas, contacto (`ProfilePage`) |
 | `/blog/<slug>/opengraph-image` · `/story` | Imagen para redes (1200×630) y para historias (1080×1920) |
 | `/sitemap.xml` · `/rss.xml` · `/llms.txt` · `/robots.txt` | Para buscadores, lectores RSS y LLM |

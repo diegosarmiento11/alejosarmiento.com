@@ -11,7 +11,7 @@ Sigue estos pasos en orden y no te saltes ninguno.
 
 2. **Define antes de escribir** y muéstrame esto para aprobar:
    - Palabra clave principal y 3 a 5 secundarias
-   - Pilar de contenido al que pertenece
+   - Pilar de contenido al que pertenece y, si es personal, la escena de apertura y el puente final
    - Title (60 caracteres o menos), meta description (155 o menos) y slug
    - Esquema de H2
    - Las 3 a 5 preguntas de la sección FAQ
@@ -22,7 +22,7 @@ Sigue estos pasos en orden y no te saltes ninguno.
 
 4. **Escribe el post en MDX** en `content/blog/<slug>.mdx`, con frontmatter completo (title, description, datePublished, dateModified, pilar, keywords, faq). El slug es el nombre del archivo. Usa `content/blog/_plantilla.mdx` como base.
 
-5. **La imagen OG** (1200x630) y la de historias (1080x1920) se generan solas con el título y "Alejandro Sarmiento · forabi.ai". Ábrelas en `/blog/<slug>/opengraph-image` y `/blog/<slug>/story` y confirma que el título no se corta.
+5. **La imagen OG** (1200x630) y la de historias (1080x1920) se generan solas con el título, el tema y tu foto. Ábrelas en `/blog/<slug>/opengraph-image` y `/blog/<slug>/story` y confirma que el título no se corta.
 
 6. **Verifica las URLs** de forabi.ai y externas antes de dejarlas en el post. Si alguna no existe, avísame.
 

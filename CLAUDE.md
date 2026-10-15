@@ -86,7 +86,8 @@ scripts/                  seo-check y envío del newsletter
 - ⚙ Al menos un enlace a forabi.ai y, cuando exista otro post, al menos un enlace interno.
 - ⚙ Sin H1 en el cuerpo (el título ya lo es) y con al menos dos H2.
 - La respuesta a la pregunta del título va en el primer párrafo, en 2 o 3 frases que un LLM pueda
-  citar sin contexto.
+  citar sin contexto. En los temas personales (`diario-de-fundador`, `30-antes-de-los-30`,
+  `kilometros`) se abre con una escena concreta y la idea queda dicha antes del primer H2.
 - H2 redactados como lo que la gente busca o pregunta. Párrafos de 2 a 4 líneas.
 - Toda cifra o afirmación externa lleva su fuente enlazada. Las URLs se verifican antes de publicar.
 - Imágenes con `alt` descriptivo. Si el post nace de un video, se embebe y se declara `video` en el
@@ -94,6 +95,18 @@ scripts/                  seo-check y envío del newsletter
 - Al actualizar un post se cambia `dateModified`.
 - Después de publicar: enviar la URL a indexación en Google Search Console y correr
   `newsletter:send`.
+
+**Escritura.** Lo personal es lo que separa este blog de cualquier otro: las historias y los datos
+que solo Alejandro tiene.
+
+- Una historia y una idea por artículo. De 900 a 1.500 palabras, pensado para leer en el celular.
+- Se escribe desde las cicatrices, no desde las heridas: lo que ya está procesado.
+- No se identifica a nadie. Se cuenta la experiencia de Alejandro, no lo que hicieron otros.
+- Cada post personal cierra con un puente a su trabajo ("esto mismo lo veo en las clínicas
+  cuando…"), que es donde va el enlace a forabi.ai.
+- En `30-antes-de-los-30` el título lleva el número de la entrada ("#7 de 30").
+- Un post por semana, el mismo día. Las historias se prueban primero cortas en LinkedIn; la que
+  genera conversación se expande aquí y de ella salen 2 o 3 posts más.
 
 Sitemap, RSS, `llms.txt`, la imagen OG (1200×630) y la imagen para historias (1080×1920) se generan
 solas en el build a partir del frontmatter.

@@ -7,7 +7,7 @@ export const site = {
   name: "Alejandro Sarmiento",
   title: "Alejandro Sarmiento · Fundador de forabi.ai · IA aplicada",
   description:
-    "Blog de Alejandro Sarmiento, fundador de forabi.ai y organizador de Claude Colombia: IA aplicada, agentes y software para empresas, sin humo.",
+    "Blog de Alejandro Sarmiento, fundador de forabi.ai y organizador de Claude Colombia: lo que vivo al fundar una empresa, entrenar y aplicar IA.",
   locale: "es_CO",
   lang: "es",
 } as const;
@@ -30,6 +30,8 @@ export const author = {
     "Fundador y CEO de forabi.ai, consultora de software a la medida e IA con sede en Bogotá",
     "Organizador de Claude Colombia, comunidad educativa de IA en español",
     "Comunidad de 52K personas en @alejosarmiento.ai",
+    "Los primeros tres clientes de forabi.ai salieron de amigos del triatlón",
+    "Reto «30 antes de los 30», con fecha límite el 11 de julio de 2027",
   ],
   knowsAbout: [
     "Inteligencia artificial aplicada",
@@ -63,23 +65,40 @@ export const socials = {
 
 export const CLAUDE_COLOMBIA_URL = "https://instagram.com/claude.colomb.ia";
 
+// Personal series first, then the business ones. The order is the one readers see.
 export const pillars = {
+  "diario-de-fundador": {
+    name: "Diario de fundador",
+    description:
+      "Lo que no se ve de montar forabi.ai: las decisiones, el dinero, la soledad y las relaciones que cambian cuando fundas una empresa.",
+  },
+  "30-antes-de-los-30": {
+    name: "30 antes de los 30",
+    description:
+      "Un reto con fecha límite: 30 cosas antes de cumplir 30, el 11 de julio de 2027. Cada entrada cuenta una, numerada de 1 a 30.",
+  },
+  kilometros: {
+    name: "Kilómetros",
+    description:
+      "Lo que el entrenamiento me enseña sobre construir una empresa, kilómetro a kilómetro.",
+  },
   "ia-aplicada": {
     name: "IA aplicada",
     description:
-      "Cómo usar inteligencia artificial en la operación real de una empresa: qué automatizar, cuánto cuesta y qué resultados esperar.",
+      "Cómo usar inteligencia artificial y agentes en la operación real de una empresa: qué automatizar, cuánto cuesta y qué resultados esperar.",
   },
-  "agentes-de-ia": {
-    name: "Agentes de IA",
+  "construir-con-ia": {
+    name: "Construir con IA",
     description:
-      "Qué es un agente de IA, cómo se diseña y cómo se pone a trabajar en ventas, soporte y operación sin perder el control.",
-  },
-  "construir-software": {
-    name: "Construir software",
-    description:
-      "Arquitectura, herramientas y decisiones para construir software con IA: Claude Code, desarrollo a la medida y lo que aprendo haciéndolo.",
+      "Cómo construyo software con Claude y otras herramientas de IA, explicado en español: arquitectura, decisiones y lo que aprendo haciéndolo.",
   },
 } as const;
+
+// Pillars that were retired, and where their pages now point.
+export const retiredPillars = {
+  "agentes-de-ia": "ia-aplicada",
+  "construir-software": "construir-con-ia",
+} as const satisfies Record<string, PillarSlug>;
 
 export type PillarSlug = keyof typeof pillars;
 export const pillarSlugs = Object.keys(pillars) as [PillarSlug, ...PillarSlug[]];
