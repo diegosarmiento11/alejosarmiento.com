@@ -3,12 +3,12 @@ import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { env } from "./env";
+import { DESCRIPTION_MAX, SLUG_PATTERN, TITLE_MAX } from "./post-format";
 import { pillarSlugs } from "./site";
 
-export const POSTS_DIR = path.join(process.cwd(), "content", "blog");
+export { DESCRIPTION_MAX, SLUG_PATTERN, TITLE_MAX };
 
-export const TITLE_MAX = 60;
-export const DESCRIPTION_MAX = 155;
+export const POSTS_DIR = path.join(process.cwd(), "content", "blog");
 
 const isoDate = z
   .union([z.string(), z.date()])
@@ -46,8 +46,6 @@ export type Post = Frontmatter & {
   content: string;
   readingMinutes: number;
 };
-
-export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function readingMinutes(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;

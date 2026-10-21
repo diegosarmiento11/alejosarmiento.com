@@ -7,7 +7,8 @@ mandan ellos.
 
 - Diseño y alcance: [`docs/plan.md`](docs/plan.md) · Decisiones: [`docs/adr/`](docs/adr/)
 - Cuando algo no esté cubierto aquí ni en esos documentos, se propone un ADR; no se decide en silencio.
-- Post nuevo: comando `/nuevo-post <tema>` ([`.claude/commands/nuevo-post.md`](.claude/commands/nuevo-post.md)).
+- Post nuevo: comando `/nuevo-post <tema>` ([`.claude/commands/nuevo-post.md`](.claude/commands/nuevo-post.md)),
+  o desde la pantalla `/escribir`, que valida y publica en GitHub (ADR 0008).
 
 @AGENTS.md
 
@@ -35,7 +36,7 @@ leen de ahí; ningún componente ni post los escribe a mano.
 
 Next.js 16 (App Router, Cache Components), React 19, TypeScript estricto, Tailwind 4, shadcn/ui
 (sobre Base UI), MDX en el repo, Upstash Redis para contadores, Brevo para correo, Vercel. Las
-razones están en los ADR 0001 a 0007.
+razones están en los ADR 0001 a 0009. Vercel Web Analytics mide de dónde llegan los lectores.
 
 ```bash
 pnpm install
@@ -56,6 +57,7 @@ src/lib/posts.ts          lee y valida los posts (Zod)
 src/lib/store.ts          Redis (Upstash) o memoria si no hay credenciales
 src/lib/engagement.ts     visitas, reacciones y comentarios
 src/lib/jsonld.ts         datos estructurados
+src/lib/compose-post.ts   arma y revisa los posts que llegan desde /escribir
 src/app/                  rutas; src/app/api/ son los únicos endpoints que escriben
 src/components/ui/        shadcn, generado por el CLI; se retoca lo mínimo
 scripts/                  seo-check y envío del newsletter

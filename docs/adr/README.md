@@ -20,3 +20,5 @@ edita para cambiar la decisión: se escribe uno nuevo que lo reemplaza y se marc
 | [0005](0005-own-moderated-comments.md) | Comentarios propios, sin login, moderados por correo | Aceptado |
 | [0006](0006-lightweight-workflow.md) | Flujo de trabajo liviano: ADR, docs y CLAUDE.md, sin tablero ni trunk-based | Aceptado |
 | [0007](0007-newsletter-with-brevo.md) | El newsletter y el correo transaccional pasan de Resend a Brevo | Aceptado |
+| [0008](0008-publish-from-escribir-via-github.md) | Publicar desde /escribir: la pantalla crea el MDX en GitHub | Aceptado |
+| [0009](0009-vercel-web-analytics.md) | Vercel Web Analytics para saber de dónde llegan los lectores | Aceptado |
