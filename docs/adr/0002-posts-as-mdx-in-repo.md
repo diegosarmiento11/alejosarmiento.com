@@ -1,6 +1,6 @@
 # 0002 — Los posts son archivos MDX en el repo, validados en el build
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado por 0008
 - **Fecha:** 2026-10-10
 - **Decide:** Alejandro Sarmiento
 

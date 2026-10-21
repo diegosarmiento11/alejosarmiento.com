@@ -7,8 +7,9 @@ mandan ellos.
 
 - Diseño y alcance: [`docs/plan.md`](docs/plan.md) · Decisiones: [`docs/adr/`](docs/adr/)
 - Cuando algo no esté cubierto aquí ni en esos documentos, se propone un ADR; no se decide en silencio.
-- Post nuevo: comando `/nuevo-post <tema>` ([`.claude/commands/nuevo-post.md`](.claude/commands/nuevo-post.md)),
-  o desde la pantalla `/escribir`, que valida y publica en GitHub (ADR 0008).
+- Post nuevo: desde la pantalla `/escribir`, o con el comando `/nuevo-post <tema>`
+  ([`.claude/commands/nuevo-post.md`](.claude/commands/nuevo-post.md)). Los posts viven en Redis,
+  no en el repo (ADR 0008).
 
 @AGENTS.md
 
@@ -35,36 +36,41 @@ leen de ahí; ningún componente ni post los escribe a mano.
 ## 2. Stack y comandos
 
 Next.js 16 (App Router, Cache Components), React 19, TypeScript estricto, Tailwind 4, shadcn/ui
-(sobre Base UI), MDX en el repo, Upstash Redis para contadores, Brevo para correo, Vercel. Las
-razones están en los ADR 0001 a 0009. Vercel Web Analytics mide de dónde llegan los lectores.
+(sobre Base UI), posts en MDX guardados en Upstash Redis junto a los contadores, Brevo para correo,
+Vercel. Las razones están en los ADR 0001 a 0009. Vercel Web Analytics mide de dónde llegan los lectores.
 
 ```bash
 pnpm install
 pnpm dev                 # http://localhost:3000, sin credenciales: todo corre en memoria
 pnpm run verify          # lo que se exige antes de publicar: lint · typecheck · test · seo:check · build
 pnpm run verify:quick    # durante el trabajo: typecheck + test
-pnpm run seo:check       # valida el frontmatter y el contenido de cada post
+pnpm run seo:check       # valida los posts de Redis (con .env.local) o el post de ejemplo
+pnpm run posts:push <archivo.mdx>   # valida y publica un post en Redis (pide confirmación)
 pnpm run newsletter:send <slug>   # envía el post a los suscriptores (pide confirmación)
 ```
 
 ## 3. Estructura y reglas de código
 
 ```
-content/blog/<slug>.mdx   un archivo por post; el nombre del archivo es el slug
+content/ejemplo.mdx       el post que carga la memoria en desarrollo, sin Redis
+content/plantilla.mdx     la base de un post nuevo para Claude Code
+borradores/               posts en preparación (ignorado por git); se publican con posts:push
 src/lib/site.ts           identidad, redes, pilares y mapa de enlaces
 src/lib/env.ts            el único lugar que lee process.env
-src/lib/posts.ts          lee y valida los posts (Zod)
+src/lib/posts.ts          valida los posts (Zod), los lee y guarda en el store
+src/lib/blog.ts           lecturas con caché para las páginas; se refrescan al publicar
 src/lib/store.ts          Redis (Upstash) o memoria si no hay credenciales
 src/lib/engagement.ts     visitas, reacciones y comentarios
 src/lib/jsonld.ts         datos estructurados
 src/lib/compose-post.ts   arma y revisa los posts que llegan desde /escribir
 src/app/                  rutas; src/app/api/ son los únicos endpoints que escriben
 src/components/ui/        shadcn, generado por el CLI; se retoca lo mínimo
-scripts/                  seo-check y envío del newsletter
+scripts/                  seo-check, posts-push y envío del newsletter
 ```
 
-- **Las páginas de contenido son estáticas.** Visitas, reacciones y comentarios se cargan en el
-  navegador contra `src/app/api/`. Un post nunca espera a Redis para pintarse (ADR 0003).
+- **Las páginas de contenido son estáticas.** Se sirven desde caché y solo se regeneran cuando un
+  post cambia (ADR 0008). Visitas, reacciones y comentarios se cargan en el navegador contra
+  `src/app/api/`; un post nunca espera a esos contadores para pintarse (ADR 0003).
 - **`process.env` solo en `src/lib/env.ts`.** Toda variable nueva va ahí y a `.env.example`.
 - **El sitio arranca y compila sin credenciales.** Sin Redis se usa memoria; sin Brevo, el newsletter
   y los comentarios responden que no están disponibles en producción y se simulan en desarrollo.
@@ -135,7 +141,7 @@ Los destinos viven en `site.ts` (`linkMap`). Se enlaza con texto descriptivo, nu
 
 Proyecto de una persona: sin tablero, sin feature flags y sin trunk-based (ADR 0006).
 
-- Cambios de código en una rama corta desde `main`; el contenido (un post) puede ir directo a `main`.
+- Cambios de código en una rama corta desde `main`. Los posts no pasan por git: se publican en Redis.
 - Conventional Commits en inglés (`feat`, `fix`, `content`, `docs`, `chore`); el cuerpo explica el porqué.
 - **Nunca `git push` sin confirmación explícita.** Se commitea local, se reporta el hash y se espera.
 - Vercel despliega `main` a producción y cada rama a una preview. Antes de mezclar: `pnpm run verify`

@@ -25,14 +25,9 @@ export const env = {
   ownerEmail: read("OWNER_EMAIL"),
   // Signs newsletter confirmation and comment moderation links.
   signingSecret: read("SIGNING_SECRET"),
-  // Opens /escribir, the screen that publishes posts.
+  // Opens /escribir, the screen that publishes posts, and authorizes posts:push.
   adminPassword: read("ADMIN_PASSWORD"),
-  // Fine-grained token with "Contents: read and write" on this repo only.
-  githubToken: read("GITHUB_TOKEN"),
-  githubRepo: read("GITHUB_REPO") ?? "diegosarmiento11/alejosarmiento.com",
-  githubBranch: read("GITHUB_BRANCH") ?? "main",
 } as const;
 
 export const hasRedis = Boolean(env.redisUrl && env.redisToken);
 export const hasEmail = Boolean(env.brevoApiKey && env.emailFrom);
-export const hasGithub = Boolean(env.githubToken);

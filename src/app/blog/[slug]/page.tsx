@@ -12,16 +12,17 @@ import { Reactions } from "@/components/reactions";
 import { ShareButtons } from "@/components/share-buttons";
 import { postGraph, serializeJsonLd } from "@/lib/jsonld";
 import { openGraphDefaults } from "@/lib/metadata";
-import { formatDate, getAllPosts, getPost, getRelatedPosts } from "@/lib/posts";
+import { getPost, getRelatedPosts, postSlugParams } from "@/lib/blog";
+import { formatDate } from "@/lib/posts";
 import { absoluteUrl, author, pillars, postPath } from "@/lib/site";
 
 export function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+  return postSlugParams();
 }
 
 export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) return {};
   const path = postPath(post.slug);
   return {
@@ -46,18 +47,20 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
   };
 }
 
-// Every published slug is prerendered, so the page reads params directly and
-// opts out of the instant-navigation check. An unknown slug renders the
-// not-found UI with noindex; its status stays 200 because the shell streams first.
+// Published slugs are prerendered at build time; a post published later from
+// /escribir renders on its first visit and is cached until it changes. The page
+// reads params directly and opts out of the instant-navigation check. An unknown
+// slug renders the not-found UI with noindex; its status stays 200 because the
+// shell streams first.
 export const instant = false;
 
 export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) notFound();
 
   const url = absoluteUrl(postPath(post.slug));
-  const related = getRelatedPosts(post);
+  const related = await getRelatedPosts(post);
   const updated = post.dateModified !== post.datePublished;
 
   return (

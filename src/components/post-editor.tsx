@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { CheckIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +18,8 @@ import { DESCRIPTION_MAX, slugify, TITLE_MAX } from "@/lib/post-format";
 import { linkMap, pillars, pillarSlugs, type PillarSlug } from "@/lib/site";
 
 type Draft = {
+  // Slug of the stored post being edited; null for a new one.
+  editing: string | null;
   title: string;
   slug: string;
   slugEdited: boolean;
@@ -30,6 +32,7 @@ type Draft = {
 };
 
 const EMPTY: Draft = {
+  editing: null,
   title: "",
   slug: "",
   slugEdited: false,
@@ -76,6 +79,8 @@ type Session = "loading" | "closed" | "login" | "open";
 
 export function PostEditor() {
   const [session, setSession] = useState<Session>("loading");
+  // Stable, because the post picker refetches when it changes.
+  const loggedOut = useCallback(() => setSession("login"), []);
 
   useEffect(() => {
     fetch("/api/admin/session")
@@ -97,7 +102,7 @@ export function PostEditor() {
     );
   }
   if (session === "login") return <LoginForm onDone={() => setSession("open")} />;
-  return <Editor onLoggedOut={() => setSession("login")} />;
+  return <Editor onLoggedOut={loggedOut} />;
 }
 
 function LoginForm({ onDone }: { onDone: () => void }) {
@@ -152,7 +157,7 @@ type Result =
   | { status: "idle" | "checking" | "publishing" }
   | { status: "issues"; issues: string[] }
   | { status: "ok" }
-  | { status: "published"; slug: string; draft: boolean; commitUrl: string | null }
+  | { status: "published"; slug: string; draft: boolean; edited: boolean }
   | { status: "error"; message: string };
 
 function Counter({ value, max }: { value: string; max: number }) {
@@ -203,6 +208,7 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           action,
+          editing: draft.editing,
           post: {
             ...draft,
             keywords: draft.keywords.split(/[,\n]/),
@@ -214,7 +220,6 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         issues?: string[];
         slug?: string;
         published?: boolean;
-        commitUrl?: string | null;
       } = await response.json();
 
       if (response.status === 401) {
@@ -230,7 +235,7 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
           status: "published",
           slug: data.slug,
           draft: draft.draft,
-          commitUrl: data.commitUrl ?? null,
+          edited: draft.editing !== null,
         });
         saveDraft(null);
         setDraft(EMPTY);
@@ -252,29 +257,26 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
       <div role="status" className="space-y-4">
         <p className="flex items-start gap-2 font-serif text-2xl">
           <CheckIcon className="mt-1.5 size-5 shrink-0 text-brand" />
-          {result.draft ? "Borrador guardado en el repo." : "Publicado."}
+          {result.draft ? "Borrador guardado." : result.edited ? "Cambios publicados." : "Publicado."}
         </p>
-        <p className="text-muted-foreground">
-          {result.draft
-            ? "No aparece en el sitio hasta que quites draft: true."
-            : "Vercel lo despliega en un par de minutos en "}
-          {result.draft ? null : (
+        {result.draft ? (
+          <p className="text-muted-foreground">
+            No aparece en el sitio hasta que lo edites y quites la marca de borrador.
+          </p>
+        ) : (
+          <p className="text-muted-foreground">
+            Ya está en{" "}
             <a className="underline" href={`/blog/${result.slug}`}>
               /blog/{result.slug}
             </a>
-          )}
-          {result.draft ? null : "."}
-        </p>
-        {result.commitUrl ? (
-          <p>
-            <a className="text-sm underline" href={result.commitUrl} target="_blank" rel="noreferrer">
-              Ver el cambio en GitHub
-            </a>
+            .
+          </p>
+        )}
+        {!result.draft && !result.edited ? (
+          <p className="text-sm text-muted-foreground">
+            Después: envía la URL a Google Search Console y manda el newsletter.
           </p>
         ) : null}
-        <p className="text-sm text-muted-foreground">
-          Después: envía la URL a Google Search Console y manda el newsletter.
-        </p>
         <Button variant="outline" onClick={() => setResult({ status: "idle" })}>
           Escribir otro
         </Button>
@@ -292,6 +294,15 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
       }}
       className="space-y-7"
     >
+      <PostPicker
+        editing={draft.editing}
+        onPick={(post) => {
+          setDraft(post);
+          setResult({ status: "idle" });
+        }}
+        onLoggedOut={onLoggedOut}
+      />
+
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <Label htmlFor={ids.title}>Título</Label>
@@ -316,7 +327,8 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
             id={ids.slug}
             value={draft.slug}
             onChange={(event) => update({ slug: event.target.value, slugEdited: true })}
-            className="h-9 font-mono text-sm"
+            readOnly={draft.editing !== null}
+            className="h-9 font-mono text-sm read-only:opacity-60"
           />
         </div>
       </div>
@@ -487,7 +499,7 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         </Button>
         <Button type="submit" disabled={busy} className="h-11 sm:flex-1">
           {result.status === "publishing" ? <Loader2Icon className="animate-spin" /> : null}
-          {draft.draft ? "Guardar borrador" : "Publicar"}
+          {draft.draft ? "Guardar borrador" : draft.editing ? "Publicar cambios" : "Publicar"}
         </Button>
       </div>
       <p className="text-center text-xs text-muted-foreground">
@@ -497,5 +509,87 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         </button>
       </p>
     </form>
+  );
+}
+
+type PostSummary = { slug: string; title: string; draft: boolean };
+
+// Loads a stored post into the form, or clears the form for a new one.
+function PostPicker({
+  editing,
+  onPick,
+  onLoggedOut,
+}: {
+  editing: string | null;
+  onPick: (draft: Draft) => void;
+  onLoggedOut: () => void;
+}) {
+  const [posts, setPosts] = useState<PostSummary[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/posts")
+      .then((response) => (response.status === 401 ? null : response.json()))
+      .then((data: { posts?: PostSummary[] } | null) => {
+        if (data === null) onLoggedOut();
+        else setPosts(data.posts ?? []);
+      })
+      .catch(() => setPosts([]));
+  }, [onLoggedOut]);
+
+  async function pick(slug: string | null) {
+    if (slug === null) {
+      onPick(EMPTY);
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/admin/posts?slug=${encodeURIComponent(slug)}`);
+      const data: {
+        post?: Omit<Draft, "keywords" | "slugEdited" | "editing"> & { keywords: string[] };
+      } = await response.json();
+      if (data.post) {
+        onPick({
+          ...data.post,
+          keywords: data.post.keywords.join(", "),
+          slugEdited: true,
+          editing: slug,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const NEW = "__nuevo";
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm">Post</Label>
+      <Select
+        items={[
+          { value: NEW, label: "Post nuevo" },
+          ...(posts ?? []).map((post) => ({
+            value: post.slug,
+            label: `${post.title}${post.draft ? " (borrador)" : ""}`,
+          })),
+        ]}
+        value={editing ?? NEW}
+        onValueChange={(value) => void pick(value === NEW || !value ? null : String(value))}
+        disabled={posts === null || loading}
+      >
+        <SelectTrigger className="h-11 w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NEW}>Post nuevo</SelectItem>
+          {(posts ?? []).map((post) => (
+            <SelectItem key={post.slug} value={post.slug}>
+              {post.title}
+              {post.draft ? " (borrador)" : ""}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

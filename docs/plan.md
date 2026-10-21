@@ -23,7 +23,7 @@ Lo que tiene que lograr:
 | Hosting | Vercel, plan Hobby. `main` es producción; cada rama, una preview (ADR 0001) |
 | Dominio | `alejosarmiento.com`, hoy aparcado en Hostinger |
 | Idioma | Solo español |
-| Contenido | MDX en `content/blog/`, validado en el build; URL `/blog/<slug>` (ADR 0002) |
+| Contenido | MDX guardado en Redis, publicado desde `/escribir` o `posts:push`; URL `/blog/<slug>` (ADR 0008) |
 | Home | Feed tipo Substack: franja de autor compacta con suscripción, post destacado y lista |
 | Estilo | Editorial claro: fondo papel, titulares en serif (Newsreader), interfaz en Inter, un acento |
 | Visitas | Total del sitio (una por sesión) y lecturas por post, públicas (ADR 0003) |

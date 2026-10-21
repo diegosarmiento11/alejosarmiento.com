@@ -1,9 +1,9 @@
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/blog";
 import { absoluteUrl, author, pillars, postPath, site, socials } from "@/lib/site";
 
 // https://llmstxt.org: a plain-text map of the site for language models.
-export function GET() {
-  const posts = getAllPosts().filter((post) => !post.draft);
+export async function GET() {
+  const posts = (await getAllPosts()).filter((post) => !post.draft);
   const sections = Object.entries(pillars)
     .map(([slug, pillar]) => {
       const list = posts

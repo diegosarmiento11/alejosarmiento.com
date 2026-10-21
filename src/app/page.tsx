@@ -3,11 +3,11 @@ import { AuthorPhoto } from "@/components/author-photo";
 import { FeaturedPost, PostList } from "@/components/post-card";
 import { SocialLinks } from "@/components/social-links";
 import { SubscribeForm } from "@/components/subscribe-form";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/blog";
 import { author, pillars } from "@/lib/site";
 
-export default function HomePage() {
-  const [featured, ...rest] = getAllPosts();
+export default async function HomePage() {
+  const [featured, ...rest] = await getAllPosts();
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6">

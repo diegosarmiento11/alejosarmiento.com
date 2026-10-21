@@ -8,13 +8,13 @@ const notFound = () => NextResponse.json({ error: "Post no encontrado." }, { sta
 
 export async function GET(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug") ?? "";
-  if (!postExists(slug)) return notFound();
+  if (!(await postExists(getStore(), slug))) return notFound();
   return NextResponse.json({ views: await getPostViews(getStore(), slug) });
 }
 
 export async function POST(request: NextRequest) {
   const { slug } = await readJson(request);
-  if (typeof slug !== "string" || !postExists(slug)) return notFound();
+  if (typeof slug !== "string" || !(await postExists(getStore(), slug))) return notFound();
 
   const store = getStore();
   const allowed = await allowRequest(store, "views", clientIp(request), {

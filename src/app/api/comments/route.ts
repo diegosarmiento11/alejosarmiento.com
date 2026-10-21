@@ -8,7 +8,7 @@ import {
 } from "@/lib/engagement";
 import { env } from "@/lib/env";
 import { commentsAutoApprove, commentsEnabled } from "@/lib/features";
-import { getPost } from "@/lib/posts";
+import { findPost } from "@/lib/posts";
 import { clientIp, readJson } from "@/lib/request";
 import { absoluteUrl } from "@/lib/site";
 import { getStore } from "@/lib/store";
@@ -18,7 +18,7 @@ const THIRTY_DAYS = 60 * 60 * 24 * 30;
 
 export async function GET(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug") ?? "";
-  if (!getPost(slug)) {
+  if (!(await findPost(getStore(), slug))) {
     return NextResponse.json({ error: "Post no encontrado." }, { status: 404 });
   }
   if (!commentsEnabled) return NextResponse.json({ enabled: false, comments: [] });
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Los comentarios están cerrados." }, { status: 503 });
   }
   const body = await readJson(request);
-  const post = typeof body.slug === "string" ? getPost(body.slug) : undefined;
+  const post = typeof body.slug === "string" ? await findPost(getStore(), body.slug) : undefined;
   if (!post) {
     return NextResponse.json({ error: "Post no encontrado." }, { status: 404 });
   }

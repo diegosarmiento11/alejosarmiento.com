@@ -1,0 +1,28 @@
+---
+title: "Post de ejemplo para desarrollo local"
+description: "Este post solo existe en desarrollo, cuando no hay Redis configurado. Sirve para ver el sitio con contenido sin tocar los posts reales."
+datePublished: 2026-10-21
+dateModified: 2026-10-21
+pilar: construir-con-ia
+keywords:
+  - ejemplo
+  - desarrollo local
+  - redis
+faq:
+  - question: "¿Por qué aparece este post?"
+    answer: "Porque el sitio corre sin credenciales de Redis y carga este ejemplo en memoria."
+  - question: "¿Sale en producción?"
+    answer: "No. En producción los posts se leen de Redis y este archivo no se carga."
+  - question: "¿Cómo veo los posts reales en local?"
+    answer: "Configura las variables de Upstash en .env.local; el sitio leerá de Redis."
+---
+
+Este post aparece cuando el sitio corre en desarrollo sin Redis. Los posts reales viven en Redis y se publican desde /escribir; este archivo solo da algo que mostrar en local.
+
+## Qué se puede probar con él
+
+La portada, la página del post, las reacciones, los comentarios y las imágenes OG. Todo corre en memoria y se pierde al reiniciar.
+
+## Cómo se publica de verdad
+
+Desde la pantalla /escribir o con `pnpm run posts:push`. Así se publican los posts de [forabi.ai](https://forabi.ai/sobre) y los demás.

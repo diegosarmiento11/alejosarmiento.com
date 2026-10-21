@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
 import { profilePageSchema, serializeJsonLd } from "@/lib/jsonld";
 import { openGraphDefaults } from "@/lib/metadata";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/blog";
 import { author, CLAUDE_COLOMBIA_URL, pillars, postPath, socials } from "@/lib/site";
 
 const title = "Quién es Alejandro Sarmiento, fundador de forabi.ai";
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 const linkClass =
   "underline decoration-brand/50 underline-offset-[0.2em] transition-colors hover:decoration-brand";
 
-export default function AboutPage() {
-  const latest = getAllPosts().slice(0, 3);
+export default async function AboutPage() {
+  const latest = (await getAllPosts()).slice(0, 3);
 
   return (
     <>

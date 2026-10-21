@@ -14,13 +14,13 @@ const notFound = () => NextResponse.json({ error: "Post no encontrado." }, { sta
 
 export async function GET(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug") ?? "";
-  if (!postExists(slug)) return notFound();
+  if (!(await postExists(getStore(), slug))) return notFound();
   return NextResponse.json(await getReactions(getStore(), slug, readVisitorId(request)));
 }
 
 export async function POST(request: NextRequest) {
   const { slug, reaction } = await readJson(request);
-  if (typeof slug !== "string" || !postExists(slug)) return notFound();
+  if (typeof slug !== "string" || !(await postExists(getStore(), slug))) return notFound();
   if (reaction !== null && !isReaction(reaction)) {
     return NextResponse.json({ error: "Reacción no válida." }, { status: 400 });
   }

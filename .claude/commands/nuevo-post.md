@@ -20,15 +20,15 @@ Sigue estos pasos en orden y no te saltes ninguno.
 
 3. **Si hay un video** de Instagram o TikTok en los argumentos: pídeme la transcripción si no la tienes, úsala como base, embebe el video con `<Video url="..." />` y declara `video` en el frontmatter para que se emita `VideoObject`.
 
-4. **Escribe el post en MDX** en `content/blog/<slug>.mdx`, con frontmatter completo (title, description, datePublished, dateModified, pilar, keywords, faq). El slug es el nombre del archivo. Usa `content/blog/_plantilla.mdx` como base.
+4. **Escribe el post en MDX** en `borradores/<slug>.mdx` (carpeta ignorada por git), con frontmatter completo (title, description, datePublished, dateModified, pilar, keywords, faq). El slug es el nombre del archivo. Usa `content/plantilla.mdx` como base y quita `draft: true` cuando esté listo.
 
-5. **La imagen OG** (1200x630) y la de historias (1080x1920) se generan solas con el título, el tema y tu foto. Ábrelas en `/blog/<slug>/opengraph-image` y `/blog/<slug>/story` y confirma que el título no se corta.
+5. **La imagen OG** (1200x630) y la de historias (1080x1920) se generan solas con el título, el tema y tu foto. Después de publicar, ábrelas en `/blog/<slug>/opengraph-image` y `/blog/<slug>/story` y confirma que el título no se corta.
 
 6. **Verifica las URLs** de forabi.ai y externas antes de dejarlas en el post. Si alguna no existe, avísame.
 
-7. El sitemap, el RSS y `llms.txt` se regeneran solos en el build; no los edites a mano.
+7. El sitemap, el RSS y `llms.txt` se regeneran solos al publicar; no los edites a mano.
 
-8. **Corre** `pnpm run build` y `pnpm run seo:check`. Corrige todo lo que falle.
+8. **Publica** con `pnpm run posts:push borradores/<slug>.mdx`. Valida el post contra los que ya están en Redis antes de guardarlo; corrige todo lo que marque con ✗ y avísame de lo que marque con ! en posts viejos. Pide confirmación porque escribe en producción: muéstrame el resumen y espera mi visto bueno. Necesita `.env.local` con las variables de Upstash y `ADMIN_PASSWORD` (`vercel env pull .env.local`).
 
 9. **Entrégame:**
    - La URL final del post

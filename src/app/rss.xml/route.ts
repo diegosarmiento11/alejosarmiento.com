@@ -1,4 +1,4 @@
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/blog";
 import { absoluteUrl, author, postPath, site } from "@/lib/site";
 
 function escapeXml(text: string): string {
@@ -9,8 +9,8 @@ function escapeXml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function GET() {
-  const posts = getAllPosts().filter((post) => !post.draft);
+export async function GET() {
+  const posts = (await getAllPosts()).filter((post) => !post.draft);
   const items = posts
     .map((post) => {
       const url = absoluteUrl(postPath(post.slug));

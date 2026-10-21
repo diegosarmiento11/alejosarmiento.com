@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/blog";
 import { absoluteUrl, pillarSlugs, postPath } from "@/lib/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const posts = getAllPosts().filter((post) => !post.draft);
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const posts = (await getAllPosts()).filter((post) => !post.draft);
   const latest = posts[0]?.dateModified;
   return [
     { url: absoluteUrl("/"), lastModified: latest, changeFrequency: "weekly", priority: 1 },

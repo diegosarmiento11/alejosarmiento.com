@@ -3,8 +3,9 @@
 import { createInterface } from "node:readline/promises";
 import { newPostEmail, sendCampaign } from "../src/lib/email";
 import { env } from "../src/lib/env";
-import { loadPosts } from "../src/lib/posts";
+import { findPost } from "../src/lib/posts";
 import { absoluteUrl, postPath } from "../src/lib/site";
+import { getStore } from "../src/lib/store";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -15,8 +16,8 @@ async function main() {
   if (!env.brevoApiKey || !env.emailFrom || !env.brevoListId) {
     throw new Error("Faltan BREVO_API_KEY, EMAIL_FROM o BREVO_LIST_ID en el entorno.");
   }
-  const post = loadPosts({ includeDrafts: true }).find((item) => item.slug === slug);
-  if (!post) throw new Error(`No existe content/blog/${slug}.mdx`);
+  const post = await findPost(getStore(), slug);
+  if (!post) throw new Error(`No existe el post "${slug}" en Redis.`);
   if (post.draft) throw new Error(`"${slug}" es un borrador; no se envía.`);
 
   const url = absoluteUrl(postPath(post.slug));

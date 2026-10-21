@@ -1,14 +1,11 @@
-import fs from "node:fs";
-import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { env } from "./env";
 import { DESCRIPTION_MAX, SLUG_PATTERN, TITLE_MAX } from "./post-format";
 import { pillarSlugs } from "./site";
+import type { Store } from "./store";
 
 export { DESCRIPTION_MAX, SLUG_PATTERN, TITLE_MAX };
-
-export const POSTS_DIR = path.join(process.cwd(), "content", "blog");
 
 const isoDate = z
   .union([z.string(), z.date()])
@@ -64,7 +61,7 @@ export function parsePost(slug: string, raw: string): Post {
     const issues = parsed.error.issues
       .map((issue) => `  - ${issue.path.join(".") || "frontmatter"}: ${issue.message}`)
       .join("\n");
-    throw new Error(`Frontmatter inválido en "${slug}.mdx":\n${issues}`);
+    throw new Error(`Frontmatter inválido en "${slug}":\n${issues}`);
   }
   return {
     ...parsed.data,
@@ -74,54 +71,83 @@ export function parsePost(slug: string, raw: string): Post {
   };
 }
 
-// Paths are spelled out from process.cwd() so the bundler traces only content/blog
-// into the server functions that read posts at request time.
-export function listPostFiles(): string[] {
-  if (!fs.existsSync(POSTS_DIR)) return [];
-  return fs
-    .readdirSync(path.join(process.cwd(), "content", "blog"))
-    .filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
+// Posts live in the store (Redis in production): one hash field per slug holding
+// the full MDX source, frontmatter included (ADR 0008). Every save keeps the
+// previous version in a per-post history hash, keyed by the time it was replaced.
+export const POSTS_KEY = "posts";
+export const postHistoryKey = (slug: string) => `posts:history:${slug}`;
+
+export type PostLoad = { posts: Post[]; errors: string[] };
+
+function byDate(a: Post, b: Post): number {
+  return b.datePublished.localeCompare(a.datePublished) || a.slug.localeCompare(b.slug);
 }
 
-export function loadPosts({ includeDrafts = false }: { includeDrafts?: boolean } = {}): Post[] {
-  return listPostFiles()
-    .map((file) =>
-      parsePost(
-        file.replace(/\.mdx$/, ""),
-        fs.readFileSync(path.join(process.cwd(), "content", "blog", file), "utf8"),
-      ),
-    )
-    .filter((post) => includeDrafts || !post.draft)
-    .sort(
-      (a, b) =>
-        b.datePublished.localeCompare(a.datePublished) ||
-        a.slug.localeCompare(b.slug),
-    );
+// An invalid post is reported, not thrown, so one bad entry cannot take the site down.
+export async function readPosts(
+  store: Store,
+  { includeDrafts = false }: { includeDrafts?: boolean } = {},
+): Promise<PostLoad> {
+  const sources = await store.hgetall(POSTS_KEY);
+  const posts: Post[] = [];
+  const errors: string[] = [];
+  for (const [slug, source] of Object.entries(sources)) {
+    try {
+      const post = parsePost(slug, source);
+      if (includeDrafts || !post.draft) posts.push(post);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  return { posts: posts.sort(byDate), errors };
 }
 
-let cached: Post[] | undefined;
-
-// Drafts are visible in development only.
-export function getAllPosts(): Post[] {
-  if (cached && env.isProduction) return cached;
-  cached = loadPosts({ includeDrafts: !env.isProduction });
-  return cached;
+export async function loadPosts(
+  store: Store,
+  options: { includeDrafts?: boolean } = {},
+): Promise<Post[]> {
+  const { posts, errors } = await readPosts(store, options);
+  for (const error of errors) console.error(`[posts] ${error}`);
+  return posts;
 }
 
-export function getPost(slug: string): Post | undefined {
-  return getAllPosts().find((post) => post.slug === slug);
+export async function getPostSource(store: Store, slug: string): Promise<string | null> {
+  return store.hget(POSTS_KEY, slug);
 }
 
-export function postExists(slug: string): boolean {
-  return getPost(slug) !== undefined;
+// Reads one post straight from the store, skipping caches. Drafts count only outside production.
+export async function findPost(store: Store, slug: string): Promise<Post | undefined> {
+  if (!SLUG_PATTERN.test(slug)) return undefined;
+  const source = await getPostSource(store, slug);
+  if (!source) return undefined;
+  try {
+    const post = parsePost(slug, source);
+    return post.draft && env.isProduction ? undefined : post;
+  } catch {
+    return undefined;
+  }
 }
 
-export function getPostsByPillar(pilar: string): Post[] {
-  return getAllPosts().filter((post) => post.pilar === pilar);
+export async function postExists(store: Store, slug: string): Promise<boolean> {
+  return (await findPost(store, slug)) !== undefined;
 }
 
-export function getRelatedPosts(post: Post, limit = 3): Post[] {
-  const others = getAllPosts().filter((other) => other.slug !== post.slug);
+export async function savePost(
+  store: Store,
+  slug: string,
+  source: string,
+  now: Date,
+): Promise<void> {
+  parsePost(slug, source);
+  const previous = await getPostSource(store, slug);
+  if (previous !== null && previous !== source) {
+    await store.hset(postHistoryKey(slug), now.toISOString(), previous);
+  }
+  await store.hset(POSTS_KEY, slug, source);
+}
+
+export function relatedPosts(post: Post, all: Post[], limit = 3): Post[] {
+  const others = all.filter((other) => other.slug !== post.slug);
   const samePillar = others.filter((other) => other.pilar === post.pilar);
   const rest = others.filter((other) => other.pilar !== post.pilar);
   return [...samePillar, ...rest].slice(0, limit);

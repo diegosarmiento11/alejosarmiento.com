@@ -1,5 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Redis } from "@upstash/redis";
 import { env, hasRedis } from "./env";
+import { POSTS_KEY } from "./posts";
 
 // The small slice of Redis the site needs. Values are strings; callers parse.
 export interface Store {
@@ -98,6 +101,14 @@ class RedisStore implements Store {
   }
 }
 
+// Without Redis, development starts with one example post so the site has
+// something to render. Production never loads it.
+function seedExamplePost(store: Store): void {
+  const file = path.join(process.cwd(), "content", "ejemplo.mdx");
+  if (!fs.existsSync(file)) return;
+  void store.hset(POSTS_KEY, "post-de-ejemplo", fs.readFileSync(file, "utf8"));
+}
+
 // Kept on globalThis so every route handler shares one MemoryStore in development.
 const globalStore = globalThis as { __blogStore?: Store };
 
@@ -107,6 +118,7 @@ export function getStore(): Store {
     instance = hasRedis
       ? new RedisStore(new Redis({ url: env.redisUrl!, token: env.redisToken! }))
       : new MemoryStore();
+    if (!hasRedis && !env.isProduction) seedExamplePost(instance);
     if (!hasRedis && env.isProduction) {
       console.warn(
         "[store] UPSTASH_REDIS_REST_URL/TOKEN no están definidas: los contadores viven en memoria y se pierden.",

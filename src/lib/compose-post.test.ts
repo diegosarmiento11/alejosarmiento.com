@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanPostInput, composeMdx, reviewPost, todayInBogota } from "./compose-post";
+import { cleanPostInput, composeMdx, reviewPost, todayInBogota, toPostInput } from "./compose-post";
 import { parsePost, type Post } from "./posts";
 
 const body = [
@@ -26,7 +26,10 @@ const valid = {
 
 const existing: Post = parsePost(
   "existente",
-  composeMdx(cleanPostInput({ ...valid, title: "Un post que ya existe en el blog" }), "2026-10-01"),
+  composeMdx(cleanPostInput({ ...valid, title: "Un post que ya existe en el blog" }), {
+    datePublished: "2026-10-01",
+    dateModified: "2026-10-01",
+  }),
 );
 
 describe("todayInBogota", () => {
@@ -53,13 +56,18 @@ describe("cleanPostInput", () => {
     expect(input.pilar).toBe("diario-de-fundador");
     expect(input.draft).toBe(false);
   });
+
+  it("keeps the edited post's slug when none is sent, even if the title changed", () => {
+    const input = cleanPostInput({ ...valid, title: "Otro título" }, { editing: "existente" });
+    expect(input.slug).toBe("existente");
+  });
 });
 
 describe("reviewPost", () => {
   const today = "2026-10-21";
 
   it("produces a file the blog can parse, dated today", () => {
-    const review = reviewPost(cleanPostInput(valid), [existing], today);
+    const review = reviewPost(cleanPostInput(valid), [existing], { today });
     expect(review.issues).toEqual([]);
     const post = parsePost("aprendi-corriendo-primera-maraton", review.mdx);
     expect(post.datePublished).toBe(today);
@@ -72,7 +80,7 @@ describe("reviewPost", () => {
     const review = reviewPost(
       cleanPostInput({ ...valid, title: "Corto", keywords: ["uno"], faq: [] }),
       [existing],
-      today,
+      { today },
     );
     expect(review.issues).toEqual(
       expect.arrayContaining([
@@ -87,7 +95,7 @@ describe("reviewPost", () => {
     const review = reviewPost(
       cleanPostInput({ ...valid, slug: "existente", title: existing.title }),
       [existing],
-      today,
+      { today },
     );
     expect(review.issues).toEqual(
       expect.arrayContaining([
@@ -101,7 +109,7 @@ describe("reviewPost", () => {
     const review = reviewPost(
       cleanPostInput({ ...valid, body: "Muy corto.\n\n## Solo uno" }),
       [existing],
-      today,
+      { today },
     );
     expect(review.issues).toEqual(
       expect.arrayContaining([
@@ -110,5 +118,33 @@ describe("reviewPost", () => {
         expect.stringContaining("enlace interno"),
       ]),
     );
+  });
+
+  it("keeps the slug, publication date and video when editing", () => {
+    const withVideo = parsePost(
+      "existente",
+      composeMdx(
+        cleanPostInput({ ...valid, title: "Un post que ya existe en el blog" }),
+        { datePublished: "2026-10-01", dateModified: "2026-10-01" },
+        { url: "https://www.instagram.com/reel/abc/", uploadDate: "2026-10-01" },
+      ),
+    );
+    const input = { ...toPostInput(withVideo), description: `${valid.description.slice(0, 90)} Editada.` };
+    const review = reviewPost(input, [withVideo], { today, editing: withVideo });
+
+    expect(review.issues).toEqual([]);
+    const edited = parsePost("existente", review.mdx);
+    expect(edited.datePublished).toBe("2026-10-01");
+    expect(edited.dateModified).toBe(today);
+    expect(edited.video?.url).toBe("https://www.instagram.com/reel/abc/");
+    expect(edited.description).toMatch(/Editada\.$/);
+  });
+
+  it("does not let an edit move the post to another address", () => {
+    const review = reviewPost({ ...toPostInput(existing), slug: "otra-direccion" }, [existing], {
+      today,
+      editing: existing,
+    });
+    expect(review.issues).toContain("La dirección de un post publicado no se cambia.");
   });
 });

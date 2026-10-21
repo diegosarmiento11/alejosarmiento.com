@@ -4,8 +4,8 @@ import { frontmatterSchema, parsePost, type Post } from "./posts";
 import { checkPost } from "./seo-check";
 import { pillarSlugs, type PillarSlug } from "./site";
 
-// Turns what the author types in /escribir into a content/blog/<slug>.mdx file,
-// and reviews it with the same rules the build and seo:check enforce.
+// Turns what the author types in /escribir into the MDX source stored for a post,
+// and reviews it with the same rules seo:check enforces.
 
 export type PostInput = {
   title: string;
@@ -32,13 +32,15 @@ function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function cleanPostInput(raw: unknown): PostInput {
+// `editing` is the slug of the stored post being edited: a blank slug keeps it,
+// instead of deriving a new one from a changed title.
+export function cleanPostInput(raw: unknown, { editing }: { editing?: string } = {}): PostInput {
   const data = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const title = text(data.title);
   const pilar = pillarSlugs.find((slug) => slug === data.pilar) ?? pillarSlugs[0];
   return {
     title,
-    slug: text(data.slug) || slugify(title),
+    slug: text(data.slug) || editing || slugify(title),
     description: text(data.description),
     pilar,
     keywords: (Array.isArray(data.keywords) ? data.keywords : [])
@@ -56,17 +58,39 @@ export function cleanPostInput(raw: unknown): PostInput {
   };
 }
 
-export function composeMdx(input: PostInput, today: string): string {
+type Dates = { datePublished: string; dateModified: string };
+
+// `video` has no field in the form; an edit carries over the one the post had.
+export function composeMdx(
+  input: PostInput,
+  { datePublished, dateModified }: Dates,
+  video?: Post["video"],
+): string {
   return matter.stringify(`\n${input.body}\n`, {
     title: input.title,
     description: input.description,
-    datePublished: today,
-    dateModified: today,
+    datePublished,
+    dateModified,
     pilar: input.pilar,
     keywords: input.keywords,
     faq: input.faq,
+    ...(video ? { video } : {}),
     draft: input.draft,
   });
+}
+
+// The form's view of a stored post, for editing it.
+export function toPostInput(post: Post): PostInput {
+  return {
+    title: post.title,
+    slug: post.slug,
+    description: post.description,
+    pilar: post.pilar,
+    keywords: post.keywords,
+    faq: post.faq,
+    body: post.content.trim(),
+    draft: post.draft,
+  };
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -106,10 +130,24 @@ function inputIssues(input: PostInput): string[] {
 
 export type Review = { mdx: string; issues: string[] };
 
-export function reviewPost(input: PostInput, existing: Post[], today: string): Review {
-  const mdx = composeMdx(input, today);
+// `editing` is the stored version when the author edits a post: it keeps its slug,
+// its publication date and its video, and only dateModified moves to today.
+export function reviewPost(
+  input: PostInput,
+  all: Post[],
+  { today, editing }: { today: string; editing?: Post },
+): Review {
+  const existing = editing ? all.filter((post) => post.slug !== editing.slug) : all;
+  const mdx = composeMdx(
+    input,
+    { datePublished: editing?.datePublished ?? today, dateModified: today },
+    editing?.video,
+  );
   const issues = inputIssues(input);
 
+  if (editing && input.slug !== editing.slug) {
+    issues.push("La dirección de un post publicado no se cambia.");
+  }
   if (existing.some((post) => post.slug === input.slug)) {
     issues.push(`Ya existe un post con el slug "${input.slug}".`);
   }

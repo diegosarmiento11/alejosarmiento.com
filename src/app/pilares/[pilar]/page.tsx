@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostList } from "@/components/post-card";
 import { openGraphDefaults } from "@/lib/metadata";
-import { getPostsByPillar } from "@/lib/posts";
+import { getPostsByPillar } from "@/lib/blog";
 import { pillars, pillarSlugs, site, type PillarSlug } from "@/lib/site";
 
 export function generateStaticParams() {
@@ -41,7 +41,7 @@ export default async function PillarPage({ params }: PageProps<"/pilares/[pilar]
   const { pilar } = await params;
   const pillar = findPillar(pilar);
   if (!pillar) notFound();
-  const posts = getPostsByPillar(pilar);
+  const posts = await getPostsByPillar(pilar);
 
   return (
     <div className="mx-auto max-w-[44rem] px-4 pt-10 sm:px-6 sm:pt-16">
