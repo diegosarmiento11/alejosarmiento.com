@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  deletePost,
   DESCRIPTION_MAX,
   findPost,
   POSTS_KEY,
@@ -178,6 +179,16 @@ describe("posts in the store", () => {
     expect((await findPost(store, "uno"))?.slug).toBe("uno");
     expect(await findPost(store, "otro")).toBeUndefined();
     expect(await findPost(store, "../uno")).toBeUndefined();
+  });
+
+  it("deletes a post but keeps its last version in the history", async () => {
+    const store = new MemoryStore();
+    const source = mdx();
+    await savePost(store, "uno", source, now);
+    expect(await deletePost(store, "uno", now)).toBe(true);
+    expect(await findPost(store, "uno")).toBeUndefined();
+    expect(await store.hgetall(postHistoryKey("uno"))).toEqual({ [now.toISOString()]: source });
+    expect(await deletePost(store, "uno", now)).toBe(false);
   });
 });
 

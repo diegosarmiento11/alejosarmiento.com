@@ -146,6 +146,15 @@ export async function savePost(
   await store.hset(POSTS_KEY, slug, source);
 }
 
+// The deleted source stays in the post's history, so a mistaken delete can be undone.
+export async function deletePost(store: Store, slug: string, now: Date): Promise<boolean> {
+  const previous = await getPostSource(store, slug);
+  if (previous === null) return false;
+  await store.hset(postHistoryKey(slug), now.toISOString(), previous);
+  await store.hdel(POSTS_KEY, slug);
+  return true;
+}
+
 export function relatedPosts(post: Post, all: Post[], limit = 3): Post[] {
   const others = all.filter((other) => other.slug !== post.slug);
   const samePillar = others.filter((other) => other.pilar === post.pilar);

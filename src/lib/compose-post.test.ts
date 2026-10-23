@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cleanPostInput, composeMdx, reviewPost, todayInBogota, toPostInput } from "./compose-post";
+import {
+  cleanPostInput,
+  composeMdx,
+  mdxToPostInput,
+  reviewPost,
+  todayInBogota,
+  toPostInput,
+} from "./compose-post";
 import { parsePost, type Post } from "./posts";
 
 const body = [
@@ -146,5 +153,23 @@ describe("reviewPost", () => {
       editing: existing,
     });
     expect(review.issues).toContain("La dirección de un post publicado no se cambia.");
+  });
+});
+
+describe("mdxToPostInput", () => {
+  it("reads back a downloaded post, slug from the file name", () => {
+    const source = composeMdx(cleanPostInput({ ...valid, slug: "maraton" }), {
+      datePublished: "2026-10-01",
+      dateModified: "2026-10-02",
+    });
+    const input = mdxToPostInput(source, "maraton.mdx");
+    expect(input).toEqual(cleanPostInput({ ...valid, slug: "maraton" }));
+  });
+
+  it("loads an incomplete file and derives the slug when the name is not one", () => {
+    const input = mdxToPostInput("---\ntitle: Un título suelto\n---\n\nSolo texto.", "Mi Post (1).mdx");
+    expect(input.slug).toBe("titulo-suelto");
+    expect(input.body).toBe("Solo texto.");
+    expect(input.faq).toEqual([]);
   });
 });

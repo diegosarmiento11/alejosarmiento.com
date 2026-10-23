@@ -93,6 +93,21 @@ export function toPostInput(post: Post): PostInput {
   };
 }
 
+// An uploaded .mdx file, read into the form. It is lenient on purpose: a file
+// missing fields still loads, and the review names what to fix before publishing.
+// Dates are not read: they come from the stored post or from today.
+export const IMPORT_MAX_CHARS = 200_000;
+
+export function mdxToPostInput(source: string, fileName: string): PostInput {
+  const { data, content } = matter(source);
+  const fileSlug = fileName.replace(/\.mdx?$/i, "");
+  return cleanPostInput({
+    ...data,
+    slug: SLUG_PATTERN.test(fileSlug) ? fileSlug : "",
+    body: content,
+  });
+}
+
 const FIELD_LABELS: Record<string, string> = {
   title: "Título",
   description: "Descripción",

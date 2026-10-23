@@ -1,9 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
-import { CheckIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  CheckIcon,
+  DownloadIcon,
+  Loader2Icon,
+  PlusIcon,
+  Trash2Icon,
+  UploadIcon,
+  XIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,6 +61,13 @@ const EMPTY: Draft = {
   body: "",
   draft: false,
 };
+
+// What the API sends for a post, as the form holds it.
+type PostFields = Omit<Draft, "keywords" | "slugEdited" | "editing"> & { keywords: string[] };
+
+function toDraft(post: PostFields, editing: string | null): Draft {
+  return { ...EMPTY, ...post, keywords: post.keywords.join(", "), slugEdited: true, editing };
+}
 
 // The unsent draft survives a closed tab on this device only. Storage can be
 // unavailable (private mode), so every access is guarded.
@@ -180,6 +205,8 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
   // The editor mounts only in the browser, after the session check, so storage is readable here.
   const [draft, setDraft] = useState<Draft>(loadDraft);
   const [result, setResult] = useState<Result>({ status: "idle" });
+  // Bumped when a post is deleted, so the picker reloads its list.
+  const [listVersion, setListVersion] = useState(0);
 
   useEffect(() => {
     saveDraft(draft);
@@ -296,9 +323,28 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
     >
       <PostPicker
         editing={draft.editing}
+        version={listVersion}
         onPick={(post) => {
           setDraft(post);
           setResult({ status: "idle" });
+        }}
+        onLoggedOut={onLoggedOut}
+      />
+      <PostFiles
+        editing={draft.editing}
+        title={draft.title}
+        onImported={(post) => {
+          setDraft(post);
+          setResult({ status: "idle" });
+          toast(post.editing ? "Archivo cargado sobre el post que ya existe." : "Archivo cargado.", {
+            description: "Revísalo y publícalo cuando esté listo.",
+          });
+        }}
+        onDeleted={() => {
+          setDraft(EMPTY);
+          setResult({ status: "idle" });
+          setListVersion((version) => version + 1);
+          toast("Post eliminado.");
         }}
         onLoggedOut={onLoggedOut}
       />
@@ -517,10 +563,12 @@ type PostSummary = { slug: string; title: string; draft: boolean };
 // Loads a stored post into the form, or clears the form for a new one.
 function PostPicker({
   editing,
+  version,
   onPick,
   onLoggedOut,
 }: {
   editing: string | null;
+  version: number;
   onPick: (draft: Draft) => void;
   onLoggedOut: () => void;
 }) {
@@ -535,7 +583,7 @@ function PostPicker({
         else setPosts(data.posts ?? []);
       })
       .catch(() => setPosts([]));
-  }, [onLoggedOut]);
+  }, [onLoggedOut, version]);
 
   async function pick(slug: string | null) {
     if (slug === null) {
@@ -545,17 +593,8 @@ function PostPicker({
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/posts?slug=${encodeURIComponent(slug)}`);
-      const data: {
-        post?: Omit<Draft, "keywords" | "slugEdited" | "editing"> & { keywords: string[] };
-      } = await response.json();
-      if (data.post) {
-        onPick({
-          ...data.post,
-          keywords: data.post.keywords.join(", "),
-          slugEdited: true,
-          editing: slug,
-        });
-      }
+      const data: { post?: PostFields } = await response.json();
+      if (data.post) onPick(toDraft(data.post, slug));
     } finally {
       setLoading(false);
     }
@@ -590,6 +629,137 @@ function PostPicker({
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+
+// Upload a .mdx file into the form, and download or delete the post being edited.
+function PostFiles({
+  editing,
+  title,
+  onImported,
+  onDeleted,
+  onLoggedOut,
+}: {
+  editing: string | null;
+  title: string;
+  onImported: (draft: Draft) => void;
+  onDeleted: () => void;
+  onLoggedOut: () => void;
+}) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function upload(file: File | undefined) {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const response = await fetch("/api/admin/posts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "import", fileName: file.name, source: await file.text() }),
+      });
+      if (response.status === 401) {
+        onLoggedOut();
+        return;
+      }
+      const data: { post?: PostFields; editing?: string | null; error?: string } =
+        await response.json();
+      if (data.post) onImported(toDraft(data.post, data.editing ?? null));
+      else toast.error(data.error ?? "No se pudo leer el archivo.");
+    } catch {
+      toast.error("Sin conexión. Intenta de nuevo.");
+    } finally {
+      setImporting(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  }
+
+  async function remove() {
+    if (!editing) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/posts?slug=${encodeURIComponent(editing)}`, {
+        method: "DELETE",
+      });
+      if (response.status === 401) {
+        onLoggedOut();
+        return;
+      }
+      if (response.ok) {
+        setConfirming(false);
+        onDeleted();
+      } else {
+        toast.error("No se pudo eliminar. Recarga la página e intenta de nuevo.");
+      }
+    } catch {
+      toast.error("Sin conexión. Intenta de nuevo.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".mdx,.md,text/markdown"
+        className="hidden"
+        onChange={(event) => void upload(event.target.files?.[0])}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={importing}
+        onClick={() => fileInput.current?.click()}
+      >
+        {importing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
+        Subir .mdx
+      </Button>
+      {editing ? (
+        <>
+          <a
+            href={`/api/admin/posts?slug=${encodeURIComponent(editing)}&download=1`}
+            download={`${editing}.mdx`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            <DownloadIcon />
+            Descargar
+          </a>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-destructive"
+            onClick={() => setConfirming(true)}
+          >
+            <Trash2Icon />
+            Eliminar
+          </Button>
+          <Dialog open={confirming} onOpenChange={setConfirming}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>¿Eliminar este post?</DialogTitle>
+                <DialogDescription>
+                  «{title || editing}» deja de estar en /blog/{editing} de inmediato. Si quieres
+                  conservarlo, descárgalo antes.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose render={<Button type="button" variant="outline" />}>Cancelar</DialogClose>
+                <Button type="button" variant="destructive" disabled={deleting} onClick={() => void remove()}>
+                  {deleting ? <Loader2Icon className="animate-spin" /> : null}
+                  Eliminar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : null}
     </div>
   );
 }

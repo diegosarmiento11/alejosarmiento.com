@@ -35,6 +35,10 @@ cuando un post cambia.**
   las sesiones. Cinco intentos por IP cada 15 minutos.
 - **Editar:** la dirección (slug) de un post no cambia; se conservan `datePublished` y `video`, y
   `dateModified` pasa a la fecha del día en Colombia.
+- **Descargar, subir y eliminar:** desde `/escribir` se descarga el `.mdx` de un post tal como está
+  guardado. Subir un `.mdx` lo carga en el formulario sin guardarlo, y pasa por la misma revisión
+  antes de publicarse; si ya hay un post en esa dirección, se edita ese post. Eliminar quita el post
+  del sitio de inmediato y deja su última versión en `posts:history:<slug>`.
 - **Claude Code:** `/nuevo-post` escribe el MDX en `borradores/` (ignorado por git) y lo publica con
   `pnpm run posts:push borradores/<slug>.mdx`, que valida, escribe en Redis y llama a
   `/api/admin/revalidate` con `ADMIN_PASSWORD`. Necesita las variables en `.env.local`
@@ -43,7 +47,7 @@ cuando un post cambia.**
   es `dev`. Si no hay ningún post, el build prerenderiza un slug de relleno que responde "no
   encontrado", porque Cache Components no acepta `generateStaticParams` vacío.
 - **Fuera de alcance por ahora:** subir imágenes (cuando haga falta, a Vercel Blob con su ADR) y
-  borrar posts desde la pantalla (se pasan a borrador).
+  restaurar desde la pantalla una versión del historial.
 
 ## Consecuencias
 
