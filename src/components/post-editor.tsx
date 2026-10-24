@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   CheckIcon,
+  CopyIcon,
   DownloadIcon,
   Loader2Icon,
   PlusIcon,
@@ -32,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { OPT_OUT_KEY, shareChannels, shareUrl } from "@/lib/analytics";
 import { DESCRIPTION_MAX, slugify, TITLE_MAX } from "@/lib/post-format";
 import { linkMap, pillars, pillarSlugs, type PillarSlug } from "@/lib/site";
 
@@ -88,6 +90,15 @@ function saveDraft(draft: Draft | null) {
     else window.localStorage.removeItem(STORAGE_KEY);
   } catch {
     // Nothing to do: the draft just won't survive a reload.
+  }
+}
+
+// Once the author signs in here, this device stops counting in Vercel Web Analytics.
+function excludeFromAnalytics() {
+  try {
+    window.localStorage.setItem(OPT_OUT_KEY, "1");
+  } catch {
+    // Without storage, only the /escribir visits themselves are left out.
   }
 }
 
@@ -212,6 +223,8 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
     saveDraft(draft);
   }, [draft]);
 
+  useEffect(excludeFromAnalytics, []);
+
   function update(patch: Partial<Draft>) {
     setDraft((current) => {
       const next = { ...current, ...patch };
@@ -304,6 +317,7 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
             Después: envía la URL a Google Search Console y manda el newsletter.
           </p>
         ) : null}
+        {!result.draft ? <ShareLinks slug={result.slug} /> : null}
         <Button variant="outline" onClick={() => setResult({ status: "idle" })}>
           Escribir otro
         </Button>
@@ -348,6 +362,14 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         }}
         onLoggedOut={onLoggedOut}
       />
+      {draft.editing && !draft.draft ? (
+        <details className="text-sm">
+          <summary className="cursor-pointer text-muted-foreground">Enlaces para compartir</summary>
+          <div className="mt-3">
+            <ShareLinks slug={draft.editing} />
+          </div>
+        </details>
+      ) : null}
 
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
@@ -555,6 +577,47 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         </button>
       </p>
     </form>
+  );
+}
+
+// The post URL tagged per channel, so Vercel Web Analytics shows where readers came from.
+function ShareLinks({ slug }: { slug: string }) {
+  async function copy(url: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast(`Enlace para ${label} copiado.`);
+    } catch {
+      toast.error("No se pudo copiar. Selecciona el enlace y cópialo a mano.");
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">Comparte con estos enlaces</p>
+      <ul className="space-y-2">
+        {shareChannels.map((channel) => {
+          const url = shareUrl(slug, channel);
+          return (
+            <li key={url} className="flex items-center gap-2 rounded-lg border p-2 pl-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm">{channel.label}</p>
+                <p className="truncate font-mono text-xs text-muted-foreground">{url}</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={`Copiar enlace para ${channel.label}`}
+                onClick={() => void copy(url, channel.label)}
+              >
+                <CopyIcon />
+                Copiar
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
