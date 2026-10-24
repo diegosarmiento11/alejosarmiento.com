@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Analytics } from "@vercel/analytics/next";
 import { Inter, Newsreader } from "next/font/google";
+import { SiteAnalytics } from "@/components/site-analytics";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
@@ -60,7 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <Toaster position="bottom-center" />
-        <Analytics />
+        <SiteAnalytics />
       </body>
     </html>
   );
