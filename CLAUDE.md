@@ -111,9 +111,12 @@ que solo Alejandro tiene.
 
 - Una historia y una idea por artículo. De 900 a 1.500 palabras, pensado para leer en el celular.
 - Se escribe desde las cicatrices, no desde las heridas: lo que ya está procesado.
+- El lector es el protagonista. La historia de Alejandro es el vehículo; el valor es lo que el
+  lector puede aplicar. Todo post personal tiene una sección de "cómo aplicarlo tú" con 2 o 3 pasos
+  o preguntas concretas, y cuenta lo que salió mal, no solo lo que salió bien.
 - No se identifica a nadie. Se cuenta la experiencia de Alejandro, no lo que hicieron otros.
 - Cada post personal cierra con un puente a su trabajo ("esto mismo lo veo en las clínicas
-  cuando…"), que es donde va el enlace a forabi.ai.
+  cuando…"), que es donde va el enlace a forabi.ai, y con una pregunta al lector que invite a comentar.
 - En `30-antes-de-los-30` el título lleva el número de la entrada ("#7 de 30").
 - Un post por semana, el mismo día. Las historias se prueban primero cortas en LinkedIn; la que
   genera conversación se expande aquí y de ella salen 2 o 3 posts más.

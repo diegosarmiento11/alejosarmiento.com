@@ -11,7 +11,8 @@ Sigue estos pasos en orden y no te saltes ninguno.
 
 2. **Define antes de escribir** y muéstrame esto para aprobar:
    - Palabra clave principal y 3 a 5 secundarias
-   - Pilar de contenido al que pertenece y, si es personal, la escena de apertura y el puente final
+   - Pilar de contenido al que pertenece y, si es personal, la escena de apertura, qué salió mal,
+     qué puede aplicar el lector (2 o 3 pasos) y el puente final con su pregunta al lector
    - Title (60 caracteres o menos), meta description (155 o menos) y slug
    - Esquema de H2
    - Las 3 a 5 preguntas de la sección FAQ

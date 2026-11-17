@@ -103,4 +103,11 @@ describe("suggestedStructure", () => {
       expect(structure.split("\n").filter(Boolean).every((line) => line.includes(TEMPLATE_MARK))).toBe(true);
     }
   });
+
+  it("gives personal posts a section for the reader and closes with a question to them", () => {
+    const structure = suggestedStructure("diario-de-fundador");
+    expect(structure).toMatch(/^## .*aplicarlo tú/m);
+    expect(structure).toMatch(/pregunta al lector/);
+    expect(structure.indexOf("aplicarlo tú")).toBeLessThan(structure.indexOf("forabi.ai"));
+  });
 });

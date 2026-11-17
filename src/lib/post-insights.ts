@@ -375,13 +375,14 @@ export function suggestedStructure(pilar: PillarSlug): string {
   const m = TEMPLATE_MARK;
   if (PERSONAL_PILLARS.includes(pilar)) {
     return [
-      `${m} La escena: un momento concreto, con lugar y hora. Termina con la idea del post dicha en una frase.`,
-      `## ${m} ¿Qué pasó?`,
-      `${m} Lo que ocurrió, contado desde lo que ya procesaste.`,
-      `## ${m} ¿Qué aprendí?`,
-      `${m} La idea, con un ejemplo real.`,
-      `## ${m} ¿Qué haría distinto?`,
-      `${m} El puente a tu trabajo: "esto mismo lo veo en las clínicas cuando…", con el enlace a forabi.ai.`,
+      `${m} La escena: un momento concreto, con lugar y hora, y qué estaba en juego. Termina con la idea del post dicha en una frase.`,
+      `## ${m} Lo que salió mal (reescríbelo como lo buscaría tu lector)`,
+      `${m} Lo que no viste venir y lo que te costó, contado desde lo que ya procesaste.`,
+      `## ${m} La lección (reescríbela como lo buscaría tu lector)`,
+      `${m} La idea en una frase que el lector pueda repetir, con un ejemplo real.`,
+      `## ${m} Cómo aplicarlo tú (reescríbelo como lo buscaría tu lector)`,
+      `- ${m} Un paso o una pregunta que el lector pueda usar esta semana\n- ${m} Otro paso, en su empresa o en su vida`,
+      `${m} El puente a tu trabajo: "esto mismo lo veo en las clínicas cuando…", con el enlace a forabi.ai. Cierra con una pregunta al lector para que comente.`,
     ].join("\n\n");
   }
   return [
