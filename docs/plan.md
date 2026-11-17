@@ -25,7 +25,7 @@ Lo que tiene que lograr:
 | Idioma | Solo español |
 | Contenido | MDX guardado en Redis, publicado desde `/escribir` o `posts:push`; URL `/blog/<slug>` (ADR 0008) |
 | Home | Feed tipo Substack: franja de autor compacta con suscripción, post destacado y lista |
-| Estilo | Editorial claro: fondo papel, titulares en serif (Newsreader), interfaz en Inter, un acento |
+| Estilo | Editorial claro: fondo papel, una sola letra (Plus Jakarta Sans) para titulares, texto e interfaz, un acento |
 | Visitas | Total del sitio (una por sesión) y lecturas por post, públicas (ADR 0003) |
 | Reacciones | Me gusta · Me encanta · No me gustó; una por navegador, sin login, públicas (ADR 0003) |
 | Comentarios | Propios, nombre y texto, moderados por correo antes de publicarse (ADR 0005) |
