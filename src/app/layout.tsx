@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Newsreader } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -9,9 +9,8 @@ import { openGraphDefaults } from "@/lib/metadata";
 import { author, site, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
   style: ["normal", "italic"],
 });
@@ -50,7 +49,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang={site.lang} className={`${inter.variable} ${newsreader.variable} antialiased`}>
+    <html lang={site.lang} className={`${jakarta.variable} antialiased`}>
       <body className="flex min-h-dvh flex-col">
         <script
           type="application/ld+json"

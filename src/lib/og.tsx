@@ -27,11 +27,11 @@ function photoDataUrl(): string {
 
 function fonts() {
   const root = process.cwd();
-  const serif = readFileSync(path.join(root, "src/assets/fonts/newsreader-latin-500-normal.woff"));
-  const sans = readFileSync(path.join(root, "src/assets/fonts/inter-latin-500-normal.woff"));
+  const font = (weight: number) =>
+    readFileSync(path.join(root, `src/assets/fonts/plus-jakarta-sans-latin-${weight}-normal.woff`));
   return [
-    { name: "Newsreader", data: serif, weight: 500, style: "normal" },
-    { name: "Inter", data: sans, weight: 500, style: "normal" },
+    { name: "Plus Jakarta Sans", data: font(500), weight: 500, style: "normal" },
+    { name: "Plus Jakarta Sans", data: font(700), weight: 700, style: "normal" },
   ] as const;
 }
 
@@ -60,7 +60,7 @@ export function renderOgImage(card: Card): ImageResponse {
           display: "flex",
           background: PAPER,
           color: INK,
-          fontFamily: "Inter",
+          fontFamily: "Plus Jakarta Sans",
         }}
       >
         <div
@@ -87,7 +87,8 @@ export function renderOgImage(card: Card): ImageResponse {
           <div
             style={{
               display: "flex",
-              fontFamily: "Newsreader",
+              fontFamily: "Plus Jakarta Sans",
+              fontWeight: 700,
               fontSize: titleSize(card.title, [76, 64, 54]),
               lineHeight: 1.08,
               letterSpacing: -1.5,
@@ -131,7 +132,7 @@ export function renderStoryImage(card: Card): ImageResponse {
           background: PAPER,
           color: INK,
           padding: "220px 96px 260px",
-          fontFamily: "Inter",
+          fontFamily: "Plus Jakarta Sans",
         }}
       >
         <div
@@ -149,7 +150,8 @@ export function renderStoryImage(card: Card): ImageResponse {
         <div
           style={{
             display: "flex",
-            fontFamily: "Newsreader",
+            fontFamily: "Plus Jakarta Sans",
+            fontWeight: 700,
             fontSize: titleSize(card.title, [124, 108, 94]),
             lineHeight: 1.08,
             letterSpacing: -1.5,
