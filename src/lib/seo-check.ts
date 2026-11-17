@@ -1,3 +1,4 @@
+import { TEMPLATE_MARK } from "./post-insights";
 import type { Post } from "./posts";
 
 export type SeoIssue = { slug: string; message: string };
@@ -22,6 +23,9 @@ export function checkPost(post: Post, all: Post[]): SeoIssue[] {
   }
   if (!FORABI_LINK.test(body)) {
     issues.push("falta un enlace a forabi.ai (mapa de enlaces, CLAUDE.md §5)");
+  }
+  if (post.content.includes(TEMPLATE_MARK)) {
+    issues.push(`quedan textos de la estructura sugerida (${TEMPLATE_MARK}); reemplázalos`);
   }
   if (post.dateModified < post.datePublished) {
     issues.push("dateModified es anterior a datePublished");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   CheckIcon,
   CopyIcon,
@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -32,9 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { BlockEditor } from "@/components/escribir/block-editor";
+import { InsightsPanel, scoreOf } from "@/components/escribir/insights-panel";
 import { OPT_OUT_KEY, shareChannels, shareUrl } from "@/lib/analytics";
 import { DESCRIPTION_MAX, slugify, TITLE_MAX } from "@/lib/post-format";
+import { analyzePost, suggestedStructure } from "@/lib/post-insights";
 import { linkMap, pillars, pillarSlugs, type PillarSlug } from "@/lib/site";
 
 type Draft = {
@@ -206,17 +209,17 @@ function Counter({ value, max }: { value: string; max: number }) {
 
 function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
   const ids = {
-    title: useId(),
     slug: useId(),
     description: useId(),
     keywords: useId(),
-    body: useId(),
-    draft: useId(),
   };
   // The editor mounts only in the browser, after the session check, so storage is readable here.
   const [draft, setDraft] = useState<Draft>(loadDraft);
   const [result, setResult] = useState<Result>({ status: "idle" });
-  // Bumped when a post is deleted, so the picker reloads its list.
+  // The block editor reads its body once; bumping this loads another one into it.
+  const [bodyVersion, setBodyVersion] = useState(0);
+  const [posts, setPosts] = useState<PostSummary[] | null>(null);
+  // Bumped when a post is deleted, so the list reloads.
   const [listVersion, setListVersion] = useState(0);
 
   useEffect(() => {
@@ -224,6 +227,32 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
   }, [draft]);
 
   useEffect(excludeFromAnalytics, []);
+
+  useEffect(() => {
+    fetch("/api/admin/posts")
+      .then((response) => (response.status === 401 ? null : response.json()))
+      .then((data: { posts?: PostSummary[] } | null) => {
+        if (data === null) onLoggedOut();
+        else setPosts(data.posts ?? []);
+      })
+      .catch(() => setPosts([]));
+  }, [onLoggedOut, listVersion]);
+
+  const keywords = draft.keywords
+    .split(/[,\n]/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+  const insights = useMemo(
+    () =>
+      analyzePost(
+        { ...draft, keywords },
+        (posts ?? []).filter((post) => post.slug !== draft.editing),
+      ),
+    // keywords is derived from draft.keywords.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [draft, posts],
+  );
+  const score = scoreOf(insights);
 
   function update(patch: Partial<Draft>) {
     setDraft((current) => {
@@ -236,6 +265,13 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
     }
   }
 
+  // Swaps in a whole post (picked, uploaded, new) and reloads the block editor with it.
+  function replace(next: Draft) {
+    setDraft(next);
+    setBodyVersion((version) => version + 1);
+    setResult({ status: "idle" });
+  }
+
   function updateFaq(index: number, patch: Partial<Draft["faq"][number]>) {
     update({ faq: draft.faq.map((item, i) => (i === index ? { ...item, ...patch } : item)) });
   }
@@ -246,14 +282,7 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
       const response = await fetch("/api/admin/posts", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          action,
-          editing: draft.editing,
-          post: {
-            ...draft,
-            keywords: draft.keywords.split(/[,\n]/),
-          },
-        }),
+        body: JSON.stringify({ action, editing: draft.editing, post: { ...draft, keywords } }),
       });
       const data: {
         error?: string;
@@ -279,6 +308,8 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
         });
         saveDraft(null);
         setDraft(EMPTY);
+        setBodyVersion((version) => version + 1);
+        setListVersion((version) => version + 1);
       } else {
         setResult({ status: "ok" });
       }
@@ -294,14 +325,14 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
 
   if (result.status === "published") {
     return (
-      <div role="status" className="space-y-4">
+      <div role="status" className="mx-auto max-w-2xl space-y-4">
         <p className="flex items-start gap-2 font-serif text-2xl">
           <CheckIcon className="mt-1.5 size-5 shrink-0 text-brand" />
           {result.draft ? "Borrador guardado." : result.edited ? "Cambios publicados." : "Publicado."}
         </p>
         {result.draft ? (
           <p className="text-muted-foreground">
-            No aparece en el sitio hasta que lo edites y quites la marca de borrador.
+            No aparece en el sitio hasta que lo edites y lo marques como publicado.
           </p>
         ) : (
           <p className="text-muted-foreground">
@@ -326,257 +357,327 @@ function Editor({ onLoggedOut }: { onLoggedOut: () => void }) {
   }
 
   const busy = result.status === "checking" || result.status === "publishing";
+  const panel = (
+    <InsightsPanel
+      insights={insights}
+      onUseStructure={
+        draft.body.trim() === ""
+          ? () => replace({ ...draft, body: suggestedStructure(draft.pilar) })
+          : undefined
+      }
+    />
+  );
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void send("publish");
-      }}
-      className="space-y-7"
-    >
-      <PostPicker
-        editing={draft.editing}
-        version={listVersion}
-        onPick={(post) => {
-          setDraft(post);
-          setResult({ status: "idle" });
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-10 xl:gap-14">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void send("publish");
         }}
-        onLoggedOut={onLoggedOut}
-      />
-      <PostFiles
-        editing={draft.editing}
-        title={draft.title}
-        onImported={(post) => {
-          setDraft(post);
-          setResult({ status: "idle" });
-          toast(post.editing ? "Archivo cargado sobre el post que ya existe." : "Archivo cargado.", {
-            description: "Revísalo y publícalo cuando esté listo.",
-          });
-        }}
-        onDeleted={() => {
-          setDraft(EMPTY);
-          setResult({ status: "idle" });
-          setListVersion((version) => version + 1);
-          toast("Post eliminado.");
-        }}
-        onLoggedOut={onLoggedOut}
-      />
-      {draft.editing && !draft.draft ? (
-        <details className="text-sm">
-          <summary className="cursor-pointer text-muted-foreground">Enlaces para compartir</summary>
-          <div className="mt-3">
-            <ShareLinks slug={draft.editing} />
-          </div>
-        </details>
-      ) : null}
-
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <Label htmlFor={ids.title}>Título</Label>
-          <Counter value={draft.title} max={TITLE_MAX} />
-        </div>
-        <Input
-          id={ids.title}
-          value={draft.title}
-          onChange={(event) => update({ title: event.target.value })}
-          placeholder="La pregunta que responde el post"
-          className="h-11 text-base"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={ids.slug} className="text-sm">
-          Dirección
-        </Label>
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <span className="shrink-0">/blog/</span>
-          <Input
-            id={ids.slug}
-            value={draft.slug}
-            onChange={(event) => update({ slug: event.target.value, slugEdited: true })}
-            readOnly={draft.editing !== null}
-            className="h-9 font-mono text-sm read-only:opacity-60"
+        className="min-w-0 pb-24 lg:pb-0"
+      >
+        <div className="flex flex-wrap items-center gap-2 border-b pb-4">
+          <PostPicker
+            editing={draft.editing}
+            posts={posts}
+            onPick={replace}
           />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <Label htmlFor={ids.description}>Descripción para Google</Label>
-          <Counter value={draft.description} max={DESCRIPTION_MAX} />
-        </div>
-        <Textarea
-          id={ids.description}
-          value={draft.description}
-          onChange={(event) => update({ description: event.target.value })}
-          rows={3}
-          className="text-base"
-        />
-      </div>
-
-      <div className="grid gap-7 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label className="text-sm">Serie</Label>
-          <Select
-            items={pillarSlugs.map((slug) => ({ value: slug, label: pillars[slug].name }))}
-            value={draft.pilar}
-            onValueChange={(value) => {
-              if (value) update({ pilar: value as PillarSlug });
+          <PostFiles
+            editing={draft.editing}
+            title={draft.title}
+            onImported={(post) => {
+              replace(post);
+              toast(post.editing ? "Archivo cargado sobre el post que ya existe." : "Archivo cargado.", {
+                description: "Revísalo y publícalo cuando esté listo.",
+              });
             }}
-          >
-            <SelectTrigger className="h-11 w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {pillarSlugs.map((slug) => (
-                <SelectItem key={slug} value={slug}>
-                  {pillars[slug].name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={ids.keywords} className="text-sm">
-            Palabras clave (3 a 6, separadas por coma)
-          </Label>
-          <Input
-            id={ids.keywords}
-            value={draft.keywords}
-            onChange={(event) => update({ keywords: event.target.value })}
-            className="h-11 text-base"
+            onDeleted={() => {
+              replace(EMPTY);
+              setListVersion((version) => version + 1);
+              toast("Post eliminado.");
+            }}
+            onLoggedOut={onLoggedOut}
           />
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={ids.body} className="text-sm">
-          Texto (Markdown: ## para subtítulos, [texto](url) para enlaces)
-        </Label>
-        <Textarea
-          id={ids.body}
-          value={draft.body}
-          onChange={(event) => update({ body: event.target.value })}
-          rows={18}
-          placeholder="Primer párrafo: la respuesta en 2 o 3 frases, o la escena con la que abre."
-          className="font-serif text-base leading-relaxed"
-        />
-        <details className="text-sm text-muted-foreground">
-          <summary className="cursor-pointer">Enlaces a forabi.ai</summary>
-          <ul className="mt-2 space-y-1">
-            {LINKS.map((link) => (
-              <li key={link.url}>
-                {link.label}: <code className="break-all text-xs">{link.url}</code>
-              </li>
-            ))}
-          </ul>
-        </details>
-      </div>
-
-      <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-medium">Preguntas frecuentes (3 a 5)</legend>
-        {draft.faq.map((item, index) => (
-          <div key={index} className="space-y-2 rounded-lg border p-3">
-            <div className="flex items-center gap-2">
-              <Input
-                aria-label={`Pregunta ${index + 1}`}
-                value={item.question}
-                onChange={(event) => updateFaq(index, { question: event.target.value })}
-                placeholder="¿Pregunta que alguien escribiría en Google?"
-                className="h-10 text-base"
-              />
-              {draft.faq.length > 3 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Quitar pregunta ${index + 1}`}
-                  onClick={() => update({ faq: draft.faq.filter((_, i) => i !== index) })}
-                >
-                  <XIcon />
-                </Button>
-              ) : null}
-            </div>
-            <Textarea
-              aria-label={`Respuesta ${index + 1}`}
-              value={item.answer}
-              onChange={(event) => updateFaq(index, { answer: event.target.value })}
-              placeholder="Respuesta directa en 2 o 3 frases."
-              rows={2}
-              className="text-base"
+        <div className="mx-auto max-w-2xl pt-10">
+          <div className="group relative">
+            <textarea
+              aria-label="Título"
+              value={draft.title}
+              onChange={(event) => update({ title: event.target.value.replace(/\n/g, " ") })}
+              placeholder="Sin título"
+              rows={1}
+              className="field-sizing-content w-full resize-none bg-transparent font-serif text-4xl font-medium leading-tight tracking-tight outline-none placeholder:text-muted-foreground/50"
             />
+            <span className="absolute -bottom-5 right-0 text-xs">
+              <Counter value={draft.title} max={TITLE_MAX} />
+            </span>
           </div>
-        ))}
-        {draft.faq.length < 5 ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => update({ faq: [...draft.faq, { question: "", answer: "" }] })}
-          >
-            <PlusIcon />
-            Agregar pregunta
-          </Button>
-        ) : null}
-      </fieldset>
 
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={ids.draft}
-          checked={draft.draft}
-          onCheckedChange={(checked) => update({ draft: checked === true })}
-        />
-        <Label htmlFor={ids.draft} className="text-sm font-normal">
-          Guardar como borrador (no aparece en el sitio)
-        </Label>
-      </div>
+          <dl className="mt-8 grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+            <Property label="Estado">
+              <Select
+                items={[
+                  { value: "publicado", label: "Publicado" },
+                  { value: "borrador", label: "Borrador" },
+                ]}
+                value={draft.draft ? "borrador" : "publicado"}
+                onValueChange={(value) => update({ draft: value === "borrador" })}
+              >
+                <SelectTrigger className="h-8 w-auto border-transparent px-2 shadow-none hover:border-input">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="publicado">Publicado</SelectItem>
+                  <SelectItem value="borrador">Borrador (no aparece en el sitio)</SelectItem>
+                </SelectContent>
+              </Select>
+            </Property>
+            <Property label="Serie">
+              <Select
+                items={pillarSlugs.map((slug) => ({ value: slug, label: pillars[slug].name }))}
+                value={draft.pilar}
+                onValueChange={(value) => {
+                  if (value) update({ pilar: value as PillarSlug });
+                }}
+              >
+                <SelectTrigger className="h-8 w-auto border-transparent px-2 shadow-none hover:border-input">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pillarSlugs.map((slug) => (
+                    <SelectItem key={slug} value={slug}>
+                      {pillars[slug].name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Property>
+            <Property label="Dirección" htmlFor={ids.slug}>
+              <div className="flex items-center text-muted-foreground">
+                <span className="shrink-0 pl-2">/blog/</span>
+                <Input
+                  id={ids.slug}
+                  value={draft.slug}
+                  onChange={(event) => update({ slug: event.target.value, slugEdited: true })}
+                  readOnly={draft.editing !== null}
+                  className="h-8 border-transparent px-1 font-mono text-sm shadow-none hover:border-input read-only:opacity-60"
+                />
+              </div>
+            </Property>
+            <Property label="Palabras clave" htmlFor={ids.keywords}>
+              <Input
+                id={ids.keywords}
+                value={draft.keywords}
+                onChange={(event) => update({ keywords: event.target.value })}
+                placeholder="La principal primero, separadas por coma"
+                className="h-8 border-transparent px-2 shadow-none hover:border-input"
+              />
+            </Property>
+            <Property label="Descripción" htmlFor={ids.description} top>
+              <Textarea
+                id={ids.description}
+                value={draft.description}
+                onChange={(event) => update({ description: event.target.value })}
+                placeholder="Lo que Google muestra debajo del título"
+                rows={2}
+                className="min-h-0 border-transparent px-2 py-1.5 shadow-none hover:border-input"
+              />
+              <span className="block px-2 text-right text-xs">
+                <Counter value={draft.description} max={DESCRIPTION_MAX} />
+              </span>
+            </Property>
+          </dl>
 
-      {result.status === "issues" ? (
-        <div role="alert" className="rounded-lg border border-destructive/40 p-4 text-sm">
-          <p className="mb-2 font-medium">Antes de publicar, corrige:</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {result.issues.map((issue) => (
-              <li key={issue}>{issue}</li>
+          <div className="mt-6 border-t pt-8">
+            <BlockEditor
+              key={bodyVersion}
+              initialBody={draft.body}
+              onChange={(body) => update({ body })}
+            />
+            <details className="mt-2 text-sm text-muted-foreground">
+              <summary className="cursor-pointer">Enlaces a forabi.ai</summary>
+              <ul className="mt-2 space-y-1">
+                {LINKS.map((link) => (
+                  <li key={link.url}>
+                    {link.label}: <code className="break-all text-xs">{link.url}</code>
+                  </li>
+                ))}
+                <li>
+                  Tu serie: <code className="text-xs">/pilares/{draft.pilar}</code>
+                </li>
+              </ul>
+            </details>
+          </div>
+
+          <fieldset className="mt-10 space-y-3 border-t pt-8">
+            <legend className="sr-only">Preguntas frecuentes</legend>
+            <div>
+              <h2 className="font-serif text-xl font-medium" aria-hidden>
+                Preguntas frecuentes
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                De 3 a 5. Se pintan al final del post y salen en Google como FAQ.
+              </p>
+            </div>
+            {draft.faq.map((item, index) => (
+              <div key={index} className="group/faq space-y-1 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    aria-label={`Pregunta ${index + 1}`}
+                    value={item.question}
+                    onChange={(event) => updateFaq(index, { question: event.target.value })}
+                    placeholder="¿Pregunta que alguien escribiría en Google?"
+                    className="h-9 border-transparent px-1 font-medium shadow-none hover:border-input"
+                  />
+                  {draft.faq.length > 3 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Quitar pregunta ${index + 1}`}
+                      onClick={() => update({ faq: draft.faq.filter((_, i) => i !== index) })}
+                    >
+                      <XIcon />
+                    </Button>
+                  ) : null}
+                </div>
+                <Textarea
+                  aria-label={`Respuesta ${index + 1}`}
+                  value={item.answer}
+                  onChange={(event) => updateFaq(index, { answer: event.target.value })}
+                  placeholder="Respuesta directa en 2 o 3 frases."
+                  rows={2}
+                  className="min-h-0 border-transparent px-1 shadow-none hover:border-input"
+                />
+              </div>
             ))}
-          </ul>
-        </div>
-      ) : null}
-      {result.status === "ok" ? (
-        <p role="status" className="flex items-center gap-2 text-sm">
-          <CheckIcon className="size-4 text-brand" />
-          Todo en orden. Puedes publicar.
-        </p>
-      ) : null}
-      {result.status === "error" ? (
-        <p role="alert" className="text-sm text-destructive">
-          {result.message}
-        </p>
-      ) : null}
+            {draft.faq.length < 5 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => update({ faq: [...draft.faq, { question: "", answer: "" }] })}
+              >
+                <PlusIcon />
+                Agregar pregunta
+              </Button>
+            ) : null}
+          </fieldset>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={busy}
-          onClick={() => void send("check")}
-          className="h-11"
+          <div className="mt-10 space-y-4 border-t pt-6">
+            {result.status === "issues" ? (
+              <div role="alert" className="rounded-lg border border-destructive/40 p-4 text-sm">
+                <p className="mb-2 font-medium">Antes de publicar, corrige:</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {result.issues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {result.status === "ok" ? (
+              <p role="status" className="flex items-center gap-2 text-sm">
+                <CheckIcon className="size-4 text-brand" />
+                Todo en orden. Puedes publicar.
+              </p>
+            ) : null}
+            {result.status === "error" ? (
+              <p role="alert" className="text-sm text-destructive">
+                {result.message}
+              </p>
+            ) : null}
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void send("check")}
+                className="h-11"
+              >
+                {result.status === "checking" ? <Loader2Icon className="animate-spin" /> : null}
+                Revisar
+              </Button>
+              <Button type="submit" disabled={busy} className="h-11 sm:flex-1">
+                {result.status === "publishing" ? <Loader2Icon className="animate-spin" /> : null}
+                {draft.draft ? "Guardar borrador" : draft.editing ? "Publicar cambios" : "Publicar"}
+              </Button>
+            </div>
+            {draft.editing && !draft.draft ? (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground">Enlaces para compartir</summary>
+                <div className="mt-3">
+                  <ShareLinks slug={draft.editing} />
+                </div>
+              </details>
+            ) : null}
+            <p className="text-center text-xs text-muted-foreground">
+              Tu texto se guarda en este dispositivo mientras escribes.{" "}
+              <button type="button" onClick={() => void logout()} className="underline">
+                Cerrar sesión
+              </button>
+            </p>
+          </div>
+        </div>
+      </form>
+
+      <aside
+        aria-label="Hoja de ruta y optimización"
+        className="sticky top-6 hidden max-h-[calc(100dvh-3rem)] self-start overflow-y-auto border-l pl-6 lg:block"
+      >
+        {panel}
+      </aside>
+
+      {/* On phones the panel is a bottom sheet behind a bar that shows the score. */}
+      <Sheet>
+        <SheetTrigger
+          render={
+            <button
+              type="button"
+              className="fixed inset-x-4 bottom-4 z-40 flex h-12 items-center justify-between rounded-full border bg-background/95 px-5 text-sm shadow-lg backdrop-blur lg:hidden"
+            />
+          }
         >
-          {result.status === "checking" ? <Loader2Icon className="animate-spin" /> : null}
-          Revisar
-        </Button>
-        <Button type="submit" disabled={busy} className="h-11 sm:flex-1">
-          {result.status === "publishing" ? <Loader2Icon className="animate-spin" /> : null}
-          {draft.draft ? "Guardar borrador" : draft.editing ? "Publicar cambios" : "Publicar"}
-        </Button>
-      </div>
-      <p className="text-center text-xs text-muted-foreground">
-        Tu texto se guarda en este dispositivo mientras escribes.{" "}
-        <button type="button" onClick={() => void logout()} className="underline">
-          Cerrar sesión
-        </button>
-      </p>
-    </form>
+          <span className="font-medium">Hoja de ruta y optimización</span>
+          <span className={score.blocking > 0 ? "text-destructive" : "text-muted-foreground"}>
+            {score.passed}/{score.total}
+          </span>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto px-4 pb-8">
+          <SheetHeader className="px-0">
+            <SheetTitle>Hoja de ruta y optimización</SheetTitle>
+          </SheetHeader>
+          {panel}
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
+// One Notion-style property row: label on the left, inline field on the right.
+function Property({
+  label,
+  htmlFor,
+  top = false,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  top?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <dt className={top ? "self-start pt-2" : undefined}>
+        <Label htmlFor={htmlFor} className="text-xs font-normal text-muted-foreground">
+          {label}
+        </Label>
+      </dt>
+      <dd className="min-w-0">{children}</dd>
+    </>
   );
 }
 
@@ -623,30 +724,17 @@ function ShareLinks({ slug }: { slug: string }) {
 
 type PostSummary = { slug: string; title: string; draft: boolean };
 
-// Loads a stored post into the form, or clears the form for a new one.
+// Loads a stored post into the editor, or clears it for a new one.
 function PostPicker({
   editing,
-  version,
+  posts,
   onPick,
-  onLoggedOut,
 }: {
   editing: string | null;
-  version: number;
+  posts: PostSummary[] | null;
   onPick: (draft: Draft) => void;
-  onLoggedOut: () => void;
 }) {
-  const [posts, setPosts] = useState<PostSummary[] | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/admin/posts")
-      .then((response) => (response.status === 401 ? null : response.json()))
-      .then((data: { posts?: PostSummary[] } | null) => {
-        if (data === null) onLoggedOut();
-        else setPosts(data.posts ?? []);
-      })
-      .catch(() => setPosts([]));
-  }, [onLoggedOut, version]);
 
   async function pick(slug: string | null) {
     if (slug === null) {
@@ -665,8 +753,7 @@ function PostPicker({
 
   const NEW = "__nuevo";
   return (
-    <div className="space-y-2">
-      <Label className="text-sm">Post</Label>
+    <div className="min-w-0 flex-1 basis-56">
       <Select
         items={[
           { value: NEW, label: "Post nuevo" },
@@ -679,7 +766,7 @@ function PostPicker({
         onValueChange={(value) => void pick(value === NEW || !value ? null : String(value))}
         disabled={posts === null || loading}
       >
-        <SelectTrigger className="h-11 w-full">
+        <SelectTrigger aria-label="Post" className="h-9 w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
