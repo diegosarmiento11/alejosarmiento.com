@@ -37,7 +37,7 @@ leen de ahí; ningún componente ni post los escribe a mano.
 
 Next.js 16 (App Router, Cache Components), React 19, TypeScript estricto, Tailwind 4, shadcn/ui
 (sobre Base UI), posts en MDX guardados en Upstash Redis junto a los contadores, Brevo para correo,
-Vercel. Las razones están en los ADR 0001 a 0009. Vercel Web Analytics mide de dónde llegan los lectores.
+Vercel. Las razones están en los ADR 0001 a 0010. Vercel Web Analytics mide de dónde llegan los lectores.
 
 ```bash
 pnpm install
@@ -63,6 +63,8 @@ src/lib/store.ts          Redis (Upstash) o memoria si no hay credenciales
 src/lib/engagement.ts     visitas, reacciones y comentarios
 src/lib/jsonld.ts         datos estructurados
 src/lib/compose-post.ts   arma y revisa los posts que llegan desde /escribir
+src/lib/post-insights.ts  hoja de ruta y chequeos AEO/AIO/GEO/SEO del panel de /escribir (ADR 0010)
+src/lib/mdx-segments.ts   parte el MDX en lo que el editor de bloques convierte y lo que conserva
 src/app/                  rutas; src/app/api/ son los únicos endpoints que escriben
 src/components/ui/        shadcn, generado por el CLI; se retoca lo mínimo
 scripts/                  seo-check, posts-push y envío del newsletter

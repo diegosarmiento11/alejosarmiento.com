@@ -22,3 +22,4 @@ edita para cambiar la decisión: se escribe uno nuevo que lo reemplaza y se marc
 | [0007](0007-newsletter-with-brevo.md) | El newsletter y el correo transaccional pasan de Resend a Brevo | Aceptado |
 | [0008](0008-posts-in-redis-published-from-escribir.md) | Los posts viven en Redis y se publican desde /escribir | Aceptado |
 | [0009](0009-vercel-web-analytics.md) | Vercel Web Analytics para saber de dónde llegan los lectores | Aceptado |
+| [0010](0010-block-editor-in-escribir.md) | /escribir es un editor de bloques con un panel de AEO, AIO y GEO en vivo | Aceptado |

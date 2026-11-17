@@ -83,6 +83,15 @@ describe("reviewPost", () => {
     expect(post.faq).toEqual(valid.faq);
   });
 
+  it("rejects a post that still has text from the suggested structure", () => {
+    const review = reviewPost(
+      cleanPostInput({ ...valid, body: body.replace("## Dos", "## ✎ ¿Qué aprendí?") }),
+      [existing],
+      { today },
+    );
+    expect(review.issues).toEqual([expect.stringContaining("Quedan textos de la estructura sugerida")]);
+  });
+
   it("explains length and count problems in plain words", () => {
     const review = reviewPost(
       cleanPostInput({ ...valid, title: "Corto", keywords: ["uno"], faq: [] }),
